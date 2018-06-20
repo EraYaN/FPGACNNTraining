@@ -1,0 +1,115 @@
+\documentclass[techrep,english]{ipsj}
+\usepackage[utf8]{inputenc}
+
+
+\usepackage[dvips]{graphicx}
+\usepackage{latexsym}
+\usepackage{amsmath}
+\usepackage{adjustbox}
+
+\def\Underline{\setbox0\hbox\bgroup\let\\\endUnderline}
+\def\endUnderline{\vphantom{y}\egroup\smash{\underline{\box0}}\\}
+\def\|{\verb|}
+
+\setcounter{volume}{26} % vol21=2013, 22=14, 23=15, 24=16, 25=17, 26=18
+\setcounter{number}{1}
+\setcounter{page}{1}
+
+%\received{2011}{7}{1}
+%\rereceived{2011}{10}{1}   % optiona
+%\rerereceived{2011}{10}{31} % optional
+%\accepted{2011}{11}{5}
+
+\usepackage[varg]{txfonts}%%!!
+\makeatletter%
+\input{ot1txtt.fd}
+\makeatother%
+
+\begin{document}
+
+\title{Accelerating Deep Neural Network Training on FPGAs Facilitating the Use of Variable Precision}
+
+\affiliate{TiTech}{Tokyo Institute of Technology, 
+Meguro, Tokyo 152--8550, Japan}
+\affiliate{TUDelft}{Delft University of Technology, Mekelweg 2, 2628 CD Delft, Netherlands}
+
+\author{Erwin de Haan}{TiTech,TUDelft}[e.r.dehaan@student.tudelft.nl]
+\author{Arthur Podobas}{TiTech}[podobas.a.aa@m.titech.ac.jp]
+\author{Satoshi Matsuoka}{TiTech}
+
+\begin{abstract}
+The race for larger and deeper neural networks are leading researchers, vendors and practitioners to re-think architectural design decisions taken decades ago in hope to improve performance.
+Among these decisions, reducing the numerical format is thought to be one of prime candidates to increasing performance.
+Unfortunately, modern hardware has limited support for this, and the impact of modifying floating-point formats and its size remains shrouded in mystery.
+To help investigate what the effects of varying the precision during deep-learning training are, first an architecture using reconfigurable hardware needs to be developed.
+Through this work, we seek to accelerate arbitrary precision deep-learning training using Field-Programmable Gate-Arrays by leveraging Intel FPGA SDK for OpenCL.
+Preliminary results show promise for implementations based on precisions or number formats that currently only have low performing implementations on conventional CPU and GPU hardware.
+\end{abstract}
+
+%\begin{keyword}
+%Journal of Information Processing, \LaTeX, style files, ``Dos and
+% Don'ts'' list
+%\end{keyword}
+
+\maketitle
+
+%1
+\section{Introduction}
+Artur helps writing this.
+
+\section{Related Work}
+Artur can write this.
+
+\section{A FPGA-based CNN Framework}
+\subsection{Field-Programmable Gate-Arrays}
+Small intro to FPGAs.
+
+\subsection{(Convolutional) Neural Networks}
+Small intro to Neural Networks.
+
+\subsection{FPGA CNN Framework}
+Small intro to the framework.
+\subsubsection{Design overview}
+Overview design + picture.
+\subsubsection{Design details}
+Gruesome details of the design.
+\subsubsection{Design decisions}
+Decisions taken while designing. The *why* we did as we did.
+
+\section{Methodology}
+\subsection{Experimental Platform}
+Compiler, version, flags, fpga boards, host, etc.
+\subsection{Network Tested + Data-set}
+MNIST, Multilayer Perceptron?
+number of runs, batch size, etc.
+
+\section{Results}
+
+\subsection{FPGA Resource Utilization}
+Area, DSP, Fmax, etc.
+
+\subsection{Training Performance}
+Convergence, performance, accuracy, etc.
+
+\begin{biography}
+\profile{Joho Taro}{was born in 1970. He received his M.S.\ degree from
+ Johoshori University in 1994 and has been engaged in the Information
+ Processing Society of Japan since 1994. His research interest is online
+ publishing systems. He is a member of the IEEE and ACM\@.}
+%
+\profile{Shori Hanako}{was born in 1960. She received her M.E.\ and
+ Ph.D.\ from Johoshori University in 1984 and 1987, respectively. She
+ became an associate professor at Gakkai University in 1992 and a
+ professor at Johoshori University in 1997. Her current research
+ interest is online publishing systems. She received the Kiyasu Kinen
+ award in 2010. She is a Board Member of the IPSJ and a member of the
+ IEICE, IEEE-CS, and ACM\@.} 
+%
+\profile{Gakkai Jiro}{was born in 1970. He received his M.S.\ degree
+ from Johoshori University in 1994 and has been engaged in the
+ Information Processing Society of Japan since 1994. His research
+ interest is online publishing systems. He is a member of the IEEE and
+ ACM\@.}
+%
+\end{biography}
+\end{document}

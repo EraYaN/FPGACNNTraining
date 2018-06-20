@@ -2027,10 +2027,10 @@ c}}}
 \newcounter{year} \c@year\m@ne
 				
 
-\expandafter\let\csname c@巻数\endcsname\c@volume
-\expandafter\let\csname c@号数\endcsname\c@number
-\expandafter\let\csname c@月数\endcsname\c@month
-\expandafter\let\csname c@年数\endcsname\c@year
+\expandafter\let\csname c@volume\endcsname\c@volume %% Patched!
+\expandafter\let\csname c@number\endcsname\c@number %% Patched!
+\expandafter\let\csname c@month\endcsname\c@month %% Patched!
+\expandafter\let\csname c@year\endcsname\c@year %% Patched!
 
 
 
