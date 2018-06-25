@@ -34,7 +34,7 @@ Meguro, Tokyo 152--8550, Japan}
 \affiliate{TUDelft}{Delft University of Technology, Mekelweg 2, 2628 CD Delft, Netherlands}
 
 \author{Erwin de Haan}{TiTech,TUDelft}[e.r.dehaan@student.tudelft.nl]
-\author{Arthur Podobas}{TiTech}[podobas.a.aa@m.titech.ac.jp]
+\author{Artur Podobas}{TiTech}[podobas.a.aa@m.titech.ac.jp]
 \author{Satoshi Matsuoka}{TiTech}[matsu@is.titech.ac.jp]
 
 \begin{abstract}
@@ -55,12 +55,31 @@ Preliminary results show promise for implementations based on precisions or numb
 
 %1
 \section{Introduction}
-Artur helps writing this.
+The present paper describes our efforts toward a customized and generalized framework for design-space exploration using alternative numerical floating-point formats through FPGAs.
+
+The recent explosion in artificial intelligence – in particular that of deep neural networks based on backpropagation – has triggered a storm in the introduction and creation of specialized compute devices. Commercial platforms such as Microsoft’s BrainWave~\cite{msbrainwave}, Google’s TPUs~\cite{googletpu}, and Fujitsu’s DLU~\cite{fujitsudlu} are all examples of specialized circuitry dedicated to low-power, high-performance Deep-Learning (DL) training and/or inference. Meanwhile, existing general-purpose manufacturers are empowering their architecture with custom floating-point units that trade precision for performance, such as Intel’s Knights-Mill~\cite{knm} and NVIDIA’s Volta-100~\cite{volta100}. It is clear that Artifical Intelligence and Deep-Learning will have a prioritized presence in modern architecture – today and in the near future.
+
+In the pursuit for faster and more energy efficient deep-learning architecture, there is a need to critically question the long-standing architectural design decision taken by computer architects decades ago. One of the oldest design decision concerns the representation of real-valued numbers, otherwise known as the floating-point representation. The IEEE-754 floating-point representation is one of the few relics still used unchanged in computing today. However, several alternatives to the IEEE-754 format are emerging, such as Microsoft’s Deep-Learning format~\cite{msbrainwave}, Intel’s FlexPoint~\cite{intelflexpoint}, Google’s custom TPU format~\cite{tpuformat}, and Posits~\cite{posits}.
+
+However, exploring the space around IEEE-754 floating-point representations and its alternatives pose a significant engineering problem: hardware and software infrastructure is to tightly coupled to the IEEE-754 standard that changing any part of it incurs a high engineering overhead.
+One alternative is to simulate alternative floating-point representations in software, for example using soft-float or MPFR libraries~\cite{softfloat}, but the resulting performance is often several magnitudes lower than hardware implementations, limiting the size of the study conducted. Furthermore, simulating alternative numerical formats in software are incapable of using any compiler optimizations, nor can they leverage the vector instruction often crucial to reach application performance in modern processors. Porting the full software infrastructure stack is possible (and inevitable), but is a non-trivial effort that requires changes to the compiler, standard libraries and (possibly) the Application-Binary-Interface (e.g. calling convention).
+
+A better way to explore floating-point representation is to leverage Field-Programmable Gate-Arrays (FPGAs). An FPGA is a device consisting of several millions re-programmable look-up tables (LUTs) that together with programmable routers give a very malleable silicon substrate second only in performance to Application-Specific Integrate Circuits (ASICs). Modern FPGAs can be clocked at several hundreds MHz, and contain enough compute to rival even Graphics-Processing Units (GPUs), making them ideal to study architectural design choices. Furthermore, with the recent growth in popularity of High-Level Synthesis (HLS) tools, programming these devices can be as simple as writing C/C++ code, and delegate the software-to-hardware transformation effort to the compiler.
+
+We contribute with the following:
+\begin{itemize}
+\item Proposed design for a generalized FPGA training architecture targeting variable numerical formats, and
+\item Evaluation and analysis of core computation patterns, including FPGA resource utilization
+\end{itemize}
+
+The remainder of our paper is structure in the following way: Section~\ref{sec:relwork} position our work against other, similar efforts. Section~\ref{sec:framework} gives a background to machine learning and FPGAs, and describes our proposed architecture. Section~\ref{sec:method} overviews our experimental methodology, and is followed by our preliminary results in section~\ref{sec:result}. We conclude in section~\ref{sec:conclusion}.
 
 \section{Related Work}
+\label{sec:relwork}
 Artur can write this.
 
 \section{A FPGA-based CNN Framework}
+\label{sec:framework}
 \subsection{Field-Programmable Gate-Arrays}
 %Small intro to FPGAs.
 FPGAs can be used for a great variety of things, from accelerating computational algorithms to implementating a hardware design before taping out full chip.
@@ -82,6 +101,7 @@ Gruesome details of the design.
 Decisions taken while designing. The *why* we did as we did.
 
 \section{Methodology}
+\label{sec:method}
 \subsection{Experimental Platform}
 Compiler, version, flags, fpga boards, host, etc.
 \subsection{Network Tested + Data-set}
@@ -89,6 +109,7 @@ MNIST, Multilayer Perceptron?
 number of runs, batch size, etc.
 
 \section{Results}
+\label{sec:result}
 
 \subsection{FPGA Resource Utilization}
 Area, DSP, Fmax, etc.
@@ -96,25 +117,67 @@ Area, DSP, Fmax, etc.
 \subsection{Training Performance}
 Convergence, performance, accuracy, etc.
 
-\begin{biography}
-\profile{Joho Taro}{was born in 1970. He received his M.S.\ degree from
- Johoshori University in 1994 and has been engaged in the Information
- Processing Society of Japan since 1994. His research interest is online
- publishing systems. He is a member of the IEEE and ACM\@.}
-%
-\profile{Shori Hanako}{was born in 1960. She received her M.E.\ and
- Ph.D.\ from Johoshori University in 1984 and 1987, respectively. She
- became an associate professor at Gakkai University in 1992 and a
- professor at Johoshori University in 1997. Her current research
- interest is online publishing systems. She received the Kiyasu Kinen
- award in 2010. She is a Board Member of the IPSJ and a member of the
- IEICE, IEEE-CS, and ACM\@.} 
-%
-\profile{Gakkai Jiro}{was born in 1970. He received his M.S.\ degree
- from Johoshori University in 1994 and has been engaged in the
- Information Processing Society of Japan since 1994. His research
- interest is online publishing systems. He is a member of the IEEE and
- ACM\@.}
-%
-\end{biography}
+\section{Conclusion}
+\label{sec:conclusion}
+
+
+\begin{thebibliography}{99}
+
+\bibitem{msbrainwave}
+  Chung, Eric and Fowers, Jeremy and Ovtcharov, Kalin and Papamichael, Michael and Caulfield, Adrian and Massengill, Todd and Liu, Ming and Lo, Daniel and Alkalay, Shlomi and Haselman, Michael and others:
+  Serving DNNs in Real Time at Datacenter Scale with Project Brainwave:
+  {\it IEEE Micro},
+  vol. 38, number. 2, pp 8--20, 2018
+
+\bibitem{googletpu}
+  Google Blog (online):
+  Google Supercharges Machine Learning Tasks with TPU Custom Chip,
+  {\it https://cloudplatform.googleblog.com/2016/05/Google-supercharges-machine-learning-tasks-with-custom-chip.html}
+  Accessed: 2018-06-25
+
+\bibitem{fujitsudlu}
+  Fujitsu:
+  Post-K Development and Introducing DLU - Fujitsu,
+  {\it http://www.fujitsu.com/global/Images/post-k-development-and-introducing-dlu.pdf},
+  2016
+
+\bibitem{knm}
+  Bradford, Dennis and Chinthamani, Sundarama and Corbral, Jesus and Hassan, Adhiraj and Janik, Ken:
+  Knights Mill: Intel Xeon Phi Processor for Machine Learning,
+  {\it Hot Chips 2017},
+  2017
+  
+\bibitem{volta100}
+  NVIDIA:
+  Artificial Intelligence Architecture,
+  {\it https://www.nvidia.com/en-us/data-center/volta-gpu-architecture/},
+  Accessed: 2018-06-25
+
+\bibitem{intelflexpoint}
+  Koster, Urs and Webb, Tristan and Wang, Xin and Nassar, Marcel and Bansal, Arjun K and Constable, William and Elibol, Oguz and Gray, Scott and Hall, Stewart and Hornof, Luke and others:
+  FlexPoint: An Adaptive Numerical Format for Efficient Training of Deep Neural Networks,
+  {\it Advances in Neural Information Processing Systems},
+  pp 1742--1752, 2017
+
+\bibitem{tpuformat}
+  The Next Platform:
+  Tearing Apart Google’s TPU 3.0 AI CoProcessor,
+  {\it https://www.nextplatform.com/2018/05/10/tearing-apart-googles-tpu-3-0-ai-coprocessor},
+  Accessed: 2018-06-25
+    
+\bibitem{posits}
+  Gustafson, John L and Yonemoto, Isaac T:
+  Beating Floating Point at its Own Game: Posit Arithmetic,
+  {\it Supercomputing Frontiers and Innovations},
+  vol. 4, num. 2, pp 71--86, 2017
+
+\bibitem{softfloat}
+  Fousse, Laurent and Hanrot, Guillaume and Lef{\`e}vre, Vincent and P{\'e}lissier, Patrick and Zimmermann, Paul:
+  MPFR: A Multiple-Precision Binary Floating-Point Library with Correct Rounding,
+  {\it ACM Transactions on Mathematical Software (TOMS)},
+  vol. 32, num. 2, pp. 13, 2007
+  
+  
+\end{thebibliography}  
+
 \end{document}
