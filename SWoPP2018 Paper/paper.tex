@@ -57,9 +57,9 @@ Preliminary results show promise for implementations based on precisions or numb
 \section{Introduction}
 The present paper describes our efforts toward a customized and generalized framework for design-space exploration using alternative numerical floating-point formats through FPGAs.
 
-The recent explosion in artificial intelligence – in particular that of deep neural networks based on backpropagation – has triggered a storm in the introduction and creation of specialized compute devices. Commercial platforms such as Microsoft’s BrainWave~\cite{msbrainwave}, Google’s TPUs~\cite{googletpu}, and Fujitsu’s DLU~\cite{fujitsudlu} are all examples of specialized circuitry dedicated to low-power, high-performance Deep-Learning (DL) training and/or inference. Meanwhile, existing general-purpose manufacturers are empowering their architecture with custom floating-point units that trade precision for performance, such as Intel’s Knights-Mill~\cite{knm} and NVIDIA’s Volta-100~\cite{volta100}. It is clear that Artifical Intelligence and Deep-Learning will have a prioritized presence in modern architecture – today and in the near future.
+The recent explosion in artificial intelligence – in particular that of deep neural networks based on backpropagation – has triggered a storm in the introduction and creation of specialized compute devices. Commercial platforms such as Microsoft’s BrainWave~\cite{msbrainwave}, Google’s TPUs~\cite{googletpu}, and Fujitsu’s DLU~\cite{fujitsudlu} are all examples of specialized circuitry dedicated to low-power, high-performance Deep-Learning (DL) training and/or inference. Meanwhile, existing general-purpose manufacturers are empowering their architecture with custom floating-point units that trade precision for performance, such as Intel’s Knights-Mill~\cite{knm} and NVIDIA’s Volta-100~\cite{volta100}. It is clear that Artifical Intelligence and Deep-Learning will have a prioritized presence in modern architecture -- today and in the near future.
 
-In the pursuit for faster and more energy efficient deep-learning architecture, there is a need to critically question the long-standing architectural design decision taken by computer architects decades ago. One of the oldest design decision concerns the representation of real-valued numbers, otherwise known as the floating-point representation. The IEEE-754 floating-point representation is one of the few relics still used unchanged in computing today. However, several alternatives to the IEEE-754 format are emerging, such as Microsoft’s Deep-Learning format~\cite{msbrainwave}, Intel’s FlexPoint~\cite{intelflexpoint}, Google’s custom TPU format~\cite{tpuformat}, and Posits~\cite{posits}.
+In the pursuit for faster and more energy efficient deep-learning architecture, there is a need to critically question the long-standing architectural design decision taken by computer architects decades ago. One of the oldest design decision concerns the representation of real-valued numbers, otherwise known as the floating-point representation. The IEEE-754 floating-point representation is one of the few relics still used unchanged in computing today. Reducing the size of the floating-point representation can have dramatical (and positive) impacts on the performance: more compute per unit silicon, more compute per unit bandwidth, and lower power consumption. Several alternatives to the IEEE-754 format are indeed emerging, such as Microsoft’s Deep-Learning format~\cite{msbrainwave}, Intel’s FlexPoint~\cite{intelflexpoint}, Google’s custom TPU format~\cite{tpuformat}, and Posits~\cite{posits}.
 
 However, exploring the space around IEEE-754 floating-point representations and its alternatives pose a significant engineering problem: hardware and software infrastructure is to tightly coupled to the IEEE-754 standard that changing any part of it incurs a high engineering overhead.
 One alternative is to simulate alternative floating-point representations in software, for example using soft-float or MPFR libraries~\cite{softfloat}, but the resulting performance is often several magnitudes lower than hardware implementations, limiting the size of the study conducted. Furthermore, simulating alternative numerical formats in software are incapable of using any compiler optimizations, nor can they leverage the vector instruction often crucial to reach application performance in modern processors. Porting the full software infrastructure stack is possible (and inevitable), but is a non-trivial effort that requires changes to the compiler, standard libraries and (possibly) the Application-Binary-Interface (e.g. calling convention).
@@ -76,7 +76,13 @@ The remainder of our paper is structure in the following way: Section~\ref{sec:r
 
 \section{Related Work}
 \label{sec:relwork}
-Artur can write this.
+Field-Programmable Gate-Arrays (FPGAs) have extensively been used to probe and explore various architectural design decision, including those of deep-learning. The large majority of existing work limit themselves to inference, primarily due to the simpler design layout (little intermediate data needs storing). Levering FPGAs have allowed researchers to decrease the number of bits allocate to the numerical representation, going as far as inferring popular networks such as  AlexNET~\cite{krizhevsky2012imagenet} using as few as binary~\cite{shimoda2017all,umuroglu2017finn} (1-bit) weights. Inferring networks that uses few bits to represents weights (called Quantized Neural Networks~\cite{courbariaux2016binarized}) requires subtle yet necessary changes to the training phase~\cite{binaryconnect,courbariaux2016binarized,zhou2016dorefa}. Lately, modern deep-learning framework are having support for reduced precision training, some driven by leading FPGA vendors such as Xilinx~\cite{xilinxml}.
+Dicecco et al.~\cite{dicecco2017fpga} are are working on a framework similar to ours – training neural networks using FPGAs while modifying the numerical format. Their work primary focus on the IEEE-754 format and convolution layers where-as we aspire to include alternative format such as posits~\cite{posits}. Using posits in deep-learning was intended the focus of Langroudi et al.~\cite{langroudi2018deep}’s work; however, they only compared the performance against fixed-point and only \textit{stored} the weights as posit (the computation was still done using IEEE-754).
+
+FPGAs are not unique to vary the numerical precision of deep neural networks, and several ASICs have been produced for quantized neural networks. Most of these focus only on inference (for embedded deployment)  for low-power embedded domains; these include YodaNN~\cite{yodann}, BinaryEYE~\cite{binaryeye} and ChipMunk~\cite{chipmunk}; these ASICs were shown to consume up-to two magnitudes low power compared to similar FPGA solutions.
+
+Commercially most vendors do support some form of reduced precision mode. Intel’s Knight’s Milll~\cite{knm} architecture replaces one of the AVX-512 vector units of Knight’s Landing with a Vector Neural Network Instruction (VNNI) unit, capable of performing dot-products in a mixed IEEE-754 16-bit and 32-bit mode. A similar process (reduced precision multiplication, full precision accumulation) is also applied in NVIDIA’s Volta-100 line GPUs. These mixed-precision units drastically improve the Artificial-Intelligence compute capabilities (AI-FLOPs) of modern systems, trading silicon resource for increased compute with arguable small impact on training performance. Vendors also embrace drastically different formats, notably in Intel’s NERVANA~\cite{nervana} (likely where FlexPoint~\cite{intelflexpoint} is used) and Google’s TPU~\cite{tpuformat} (which have more bits in the exponent compared to the mantissa).
+
 
 \section{A FPGA-based CNN Framework}
 \label{sec:framework}
@@ -176,7 +182,87 @@ Convergence, performance, accuracy, etc.
   MPFR: A Multiple-Precision Binary Floating-Point Library with Correct Rounding,
   {\it ACM Transactions on Mathematical Software (TOMS)},
   vol. 32, num. 2, pp. 13, 2007
-  
+
+
+\bibitem{langroudi2018deep}
+  Langroudi, Seyed HF and Pandit, Tej and Kudithipudi, Dhireesha:
+  Deep Learning Inference on Embedded Devices: Fixed-Point vs Posit,
+  {\it arXiv preprint arXiv:1805.08624},
+  2018
+
+\bibitem{nervana}
+  Intel:
+  Intel Nervana Neural Network Processor,
+  {\it https://ai.intel.com/intel-nervana-neural-network-processor/},
+  Access: 2018-06
+
+\bibitem{xilinxml}
+  Xilinx:
+  Xilinx ML Suite,
+  {\it https://www.xilinx.com/applications/megatrends/machine-learning.html},
+  Accessed: 2018-16
+
+\bibitem{krizhevsky2012imagenet}
+  Krizhevsky, Alex and Sutskever, Ilya and Hinton, Geoffrey E:
+  Imagenet classification with deep convolutional neural networks,
+  {\it Advances in neural information processing systems},
+  pp 1097–1105, 2012
+
+\bibitem{binaryconnect}
+  Courbariaux, Matthieu and Bengio, Yoshua and David, Jean-Pierr:
+  Binaryconnect: Training deep neural networks with binary weights during propagations,
+  {\it Advances in neural information processing systems},
+  pp 3123–3131, 2015
+
+\bibitem{zhou2016dorefa}
+  Zhou, Shuchang and Wu, Yuxin and Ni, Zekun and Zhou, Xinyu and Wen, He and Zou, Yuheng:
+  DoReFa-Net: Training low bitwidth convolutional neural networks with low bitwidth gradients
+  {\it  arXiv preprint arXiv:1606.06160},
+  2016
+
+\bibitem{yodann}
+  Andri, Renzo and Cavigelli, Lukas and Rossi, Davide and Benini, Luca:
+  YodaNN: An Architecture for Ultralow Power Binary-Weight CNN Acceleration
+  {\it IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems},
+  vol. 37, num. 1, pp 48–60, 2018
+
+\bibitem{binaryeye}
+  Moons, Bert and Bankman, Daniel and Yang, Lita and Murmann, Boris and Verhelst, Marian:
+  BinarEye: An always-on energy-accuracy-scalable binary CNN processor with all memory on chip in 28nm CMOS,
+  {\it Custom Integrated Circuits Conference (CICC), 2018 IEEE},
+  pp 1–4, 2018
+
+
+\bibitem{chipmunk}
+  Conti, Francesco and Cavigelli, Lukas and Paulin, Gianna and Susmelj, Igor and Benini, Luca:
+  Chipmunk: A systolically scalable 0.9 mm 2, 3.08 Gop/s/mW@ 1.2 mW accelerator for near-sensor recurrent neural network inference,
+  {\it Custom Integrated Circuits Conference (CICC), 2018 IEEE},
+  pp 1–4, 2018
+
+\bibitem{dicecco2017fpga}
+  DiCecco, Roberto and Sun, Lin and Chow, Paul:
+  FPGA-based training of convolutional neural networks with a reduced precision floating-point library,
+  {\it  Field Programmable Technology (ICFPT), 2017 International Conference on},
+  pp 239–242, 2016
+
+\bibitem{shimoda2017all}
+  Shimoda, Masayuki and Sato, Shimpei and Nakahara, Hiroki:
+  All binarized convolutional neural network and its implementation on an FPGA,
+  {\it  Field Programmable Technology (ICFPT), 2017 International Conference on},
+  pp 291–294, 2017
+
+\bibitem{umuroglu2017finn}
+  Umuroglu, Yaman and Fraser, Nicholas J and Gambardella, Giulio and Blott, Michaela and Leong, Philip and Jahre, Magnus and Vissers, Kees:
+  Finn: A framework for fast, scalable binarized neural network inference,
+  {\it  Proceedings of the 2017 ACM/SIGDA International Symposium on Field-Programmable Gate Arrays},
+  pp 65–74, 2017
+
+
+\bibitem{courbariaux2016binarized}
+  Courbariaux, Matthieu and Hubara, Itay and Soudry, Daniel and El-Yaniv, Ran and Bengio, Yoshua:
+  Binarized neural networks: Training deep neural networks with weights and activations constrained to+ 1 or-1,
+  {\it arXiv preprint arXiv:1602.02830},
+  2016
   
 \end{thebibliography}  
 
