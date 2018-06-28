@@ -15,4 +15,4 @@ ssh erwin@roma7.m.gsic.titech.ac.jp "cd ~/SimpleNN && bash -login -i -c 'source 
 
 echo "Tailing $LOGNAME"
 
-ssh erwin@roma7.m.gsic.titech.ac.jp "cd ~/SimpleNN && tail -n 40 -f $LOGNAME"
+ssh erwin@roma7.m.gsic.titech.ac.jp -t "cd ~/SimpleNN && tail -n 40 -f $LOGNAME"
