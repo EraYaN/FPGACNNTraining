@@ -1,0 +1,25 @@
+#CUDA_VER=9.0
+#PATH="${PATH}:/opt/mpi/openmpi/1.6.3/bin"
+#LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/opt/mpi/openmpi/1.6.3/lib"
+#export CUDA_DIR=/usr/local/cuda-$CUDA_VER
+#export CUDA_LIB_DIR=/usr/local/cuda-$CUDA_VER/lib64
+#export LD_LIBRARY_PATH=/usr/local/cuda-$CUDA_VER/lib64:$LD_LIBRARY_PATH
+#export PATH=/usr/local/cuda-$CUDA_VER/bin:$PATH
+
+export ALTERAINSTALLFOLDER="/work/hamid/altera_pro/17.1"
+export ALTERAOCLSDKROOT="$ALTERAINSTALLFOLDER/hld"
+export INTELFPGAOCLSDKROOT="$ALTERAINSTALLFOLDER/hld"
+export AOCL_BOARD_PACKAGE_ROOT="$ALTERAOCLSDKROOT/board/P510T_OpenCL_BSP_17.1.0" # Only line I changed. was P385A_OpenCL_BSP_16.1.2
+export QUARTUS_ROOTDIR="$ALTERAINSTALLFOLDER/quartus"
+export QSYS_ROOTDIR="$QUARTUS_ROOTDIR/sopc_builder/bin"
+export LM_LICENSE_FILE="18000@roma0"
+export PATH=/work/hamid/gcc-5.4.0/bin:/work/hamid/binutils-2.25/x86_64-unknown-linux-gnu/bin:/work/hamid/binutils-2.25/bin:/home/hrz/nano/bin:$ALTERAOCLSDKROOT/bin:$QUARTUS_ROOTDIR/bin:$PATH
+#export PATH=/home/hrz/nano/bin:$ALTERAOCLSDKROOT/bin:$QUARTUS_ROOTDIR/bin:$PATH
+#export PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND" #appends commands ran in a screen session to global history file right away, instead of after exiting
+
+#export LD_LIBRARY_PATH=$ALTERAINSTALLFOLDER/hld/host/linux64/lib:$AOCL_BOARD_PACKAGE_ROOT/linux64/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/work/hamid/gcc-5.4.0/lib64:/work/hamid/binutils-2.25/lib:/work/hamid/binutils-2.25/x86_64-unknown-linux-gnu/lib:$ALTERAINSTALLFOLDER/hld/host/linux64/lib:$AOCL_BOARD_PACKAGE_ROOT/linux64/lib:$LD_LIBRARY_PATH
+#source /work/hamid/intel/2018.2/compilers_and_libraries_2018/linux/bin/compilervars.sh -arch intel64 -platform linux
+
+#alias gcc-6=/work/hamid/gcc-6.3.0/bin/gcc
+#alias g++-6=/work/hamid/gcc-6.3.0/bin/g++

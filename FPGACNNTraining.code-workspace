@@ -2,6 +2,9 @@
 	"folders": [
 		{
 			"path": "SWoPP2018 Paper"
+		},
+		{
+			"path": "SimpleNN"
 		}
 	],
 	"settings": {}

@@ -6,6 +6,8 @@
 \usepackage{latexsym}
 \usepackage{amsmath}
 \usepackage{adjustbox}
+\usepackage{booktabs}
+\usepackage{siunitx}
 
 \def\Underline{\setbox0\hbox\bgroup\let\\\endUnderline}
 \def\endUnderline{\vphantom{y}\egroup\smash{\underline{\box0}}\\}
@@ -94,28 +96,61 @@ The fabric they are made up of consists of vast arrays of switches and other rou
 This makes them very suitable for the research described in this paper.
 It gives total freedom to design a hardware implementation to explore algorithms in a hardware setting.
 
-\subsection{(Convolutional) Neural Networks}
-Small intro to Neural Networks.
+\subsection{Neural Networks}
+Intro to neural networks.
 
-\subsection{FPGA CNN Framework}
+\subsection{FPGA NN Framework}
 Small intro to the framework.
 \subsubsection{Design overview}
 Overview design + picture.
 \subsubsection{Design details}
-Gruesome details of the design.
+All weight matrices are transposed in memory.
+The main inference is done using an blocking implementation of the matrix multiplication.
+So a block is fetched from the activations and the wieghts and place in the block RAM on the FPGA.
+The block RAM is much faster then the global memory.
+This speeds up through put by a large margin.
+Block RAM is equivalent to the shared or local memory of contemporary GPUs.
+
 \subsubsection{Design decisions}
 Decisions taken while designing. The *why* we did as we did.
 
-\section{Methodology}
-\label{sec:method}
+\section{Methodology}\label{sec:method}
 \subsection{Experimental Platform}
+\begin{table}[h]\label{tab:software-versions}
+  \caption{Used software versions}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Software} & \textbf{Version} \\
+    \midrule
+    Python & v3.6.3 \\
+    Keras & v2.2.0 \\
+    TensorFlow & v1.8.0 \\
+    Intel Quartus & v17.1.0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+\begin{table}[h]\label{tab:test-hardware}
+  \caption{Test hardware}
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Hardware} & \textbf{Configuration} \\
+    \midrule
+    Intel i7-3930K & 3.20 GHz \\
+    Arria 10 & Nallatech N510T \\
+    TensorFlow & v1.8.0 \\
+    Intel Quartus & v17.1.0 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 Compiler, version, flags, fpga boards, host, etc.
 \subsection{Network Tested + Data-set}
-MNIST, Multilayer Perceptron?
-number of runs, batch size, etc.
+The used example network is a simple multilayer perceptron.
+The main dataset used was MNIST with a layer depth of 1 and the first layer output size of 128.
+The data set was trained using the first \num{50000} images from the MNIST dataset.
+The last \num{10000} images are used as the test dataset.
+Training was done using a batch size of 128.
 
-\section{Results}
-\label{sec:result}
+\section{Results}\label{sec:result}
 
 \subsection{FPGA Resource Utilization}
 Area, DSP, Fmax, etc.
@@ -123,8 +158,7 @@ Area, DSP, Fmax, etc.
 \subsection{Training Performance}
 Convergence, performance, accuracy, etc.
 
-\section{Conclusion}
-\label{sec:conclusion}
+\section{Conclusion}\label{sec:conclusion}
 
 
 \begin{thebibliography}{99}

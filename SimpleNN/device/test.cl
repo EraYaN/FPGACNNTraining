@@ -1,0 +1,61 @@
+#define II_CYCLES 28*5
+
+__kernel void mul_kernel_relu(global float * restrict activations_in, global float * restrict weights_in, global float * restrict bias_in, global float * restrict activations_out, int minibatch_size, int rows_in, int rows_out) {
+
+    //Create shift register with II_CYCLE+1 elements
+    float shift_reg[II_CYCLES+1];
+
+	//Get the global id's
+	//#pragma loop_coalesce 2
+	for(int i = 0; i<minibatch_size;i++){
+        for(int j = 0; j<rows_out; j++){
+
+            //Set first value to bias.
+            shift_reg[0] = bias_in[j];
+            //Set rest to zero.
+            #pragma unroll
+            for (int i = 1; i < II_CYCLES + 1; i++)
+            {
+                shift_reg[i] = 0;
+            }
+            //#pragma unroll 28
+            //Iterate through every element of input array
+            for(int k = 0; k < rows_in; ++k)
+            {
+                //Load ith element into end of shift register
+                //if N > II_CYCLE, add to shift_reg[0] to preserve values
+                shift_reg[II_CYCLES] = shift_reg[0] + activations_in[i * rows_in + k] * weights_in[k * rows_out + j];
+
+                #pragma unroll
+                //Shift every element of shift register
+                for(int j = 0; j < II_CYCLES; ++j)
+                {
+                    shift_reg[j] = shift_reg[j + 1];
+                }
+            }
+
+            //printf("Calling thread %d,%d -> %d: ", i, j, i * rows_out + j);
+
+            //Do the actual math
+            /*#pragma unroll 28
+            for (unsigned k = 0; k < rows_in; k++) {
+                value += activations_in[i * rows_in + k] * weights_in[k * rows_out + j];
+              *  //printf("a(%d,%d) * W(%d,%d) + ",i,k,k,j);
+            }*/
+            //printf("%0.f = %.1f\n",bias_in[j],value);
+
+            //Sum every element of shift register
+            float temp_sum = 0;
+
+            #pragma unroll
+            for(int i = 0; i < II_CYCLES; ++i)
+            {
+                temp_sum += shift_reg[i];
+            }
+
+            //write back result (Relu)
+            activations_out[i * rows_out + j] = temp_sum > 0 ? temp_sum : 0;
+
+        }
+	}
+}

@@ -500,5 +500,14 @@ venv.bak/
 # mypy
 .mypy_cache/
 
+# SimpleNN
+
+SimpleNN/local
+SimpleNN/data
+SimpleNN/archive
+*.aocx
+*.aoco
+*.p
+
 
 
