@@ -37,9 +37,9 @@ y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 
 model = Sequential()
-model.add(Dense(128, activation='relu', input_shape=(784,)))
+model.add(Dense(512, activation='relu', input_shape=(784,)))
 # model.add(Dropout(0.2))
-# model.add(Dense(512, activation='relu'))
+model.add(Dense(512, activation='relu'))
 # model.add(Dropout(0.2))
 model.add(Dense(num_classes, activation='softmax'))
 
@@ -62,6 +62,6 @@ i = 0
 for layer in model.layers:
     data = {"weights": layer.get_weights()[0], "bias": layer.get_weights()[1]}
 
-    pickle.dump(data, open("layer_h128_{}.p".format(i), "wb"))
+    pickle.dump(data, open("layer_test2_{}.p".format(i), "wb"))
 
     i = i + 1
