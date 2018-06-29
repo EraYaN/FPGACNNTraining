@@ -180,7 +180,7 @@ The main goal to make replacing the numerical format easier, and thus all the ca
 All weight matrices are transposed in memory.
 The main inference is done using an blocking implementation of the matrix multiplication.
 So a block is fetched from the activations and the wieghts and place in the block RAM on the FPGA.
-The block RAM is much faster then the global memory.
+The block RAM has a much lower latency than the global memory.
 This speeds up through put by a large margin.
 Block RAM is equivalent to the shared or local memory of contemporary GPUs.
 
@@ -225,17 +225,25 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
 
 \subsection{Network Tested + Data-set}
 The used example network is a simple multilayer perceptron.
-The main dataset used was MNIST.
-The input layer is has 128 outputs, adn the final layer 10 class outputs.
-So in total a two layer network, or two sets of weight matrices and bias vectors.
+The main dataset used was MNIST, so 784 input features.
+The structure of the sample MNIST network is.
+\begin{enumerate}
+  \item Dense(512)
+  \item Relu
+  \item Dense(512)  
+  \item Relu
+  \item Dense(10)
+  \item Softmax
+\end{enumerate}
+So in total a three layer network, or threes sets of weight matrices and bias vectors.
 The data set was trained using the first \num{50000} images from the MNIST dataset.
 The last \num{10000} images are used as the test data set.
-Training was done using a batch size of 128.
+Training was done using a batch size of \num{128}.
 The CPU code was implemented using the NumPy array.dot function.
 
 \section{Results}\label{sec:result}
-The host (numpy based) code benchmarked at \num{41} GFLOPS for simple inference.
-Our first naive implementation clocked about \num{2.5} GFLOPS for this problem size.
+The host (numpy based) code benchmarked at \num{60} GFLOPS for simple inference.
+A first naive implementation clocked about \num{2.5} GFLOPS for this problem size.
 The results for the different final FPGA kernels are shown in \cref{tab:kernel-performance}.
 
 \begin{table}[h]
@@ -245,12 +253,12 @@ The results for the different final FPGA kernels are shown in \cref{tab:kernel-p
     \toprule
     \textbf{Block size} & \textbf{GFLOPS}  \\
     \midrule
-    128$\times$128 & \num{0}  \\
-    100$\times$100 & \num{0} \\
+    128$\times$128 & \num{0}  \\ % Too big
+    100$\times$100 & \num{0} \\ % Too big (86 is also too big)
     84$\times$84 & \num{0}  \\
-    64$\times$64 & \num{14.3}  \\
+    64$\times$64 & \num{17.8}  \\ % kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx Network: [28 * 28, 512, 512, 10]
     32$\times$32 & \num{0}  \\
-    16$\times$16 & \num{4.1}  \\
+    16$\times$16 & \num{4.3}  \\ % kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx Network: [28 * 28, 512, 512, 10]
     \bottomrule
   \end{tabular}
 \end{table}
@@ -269,9 +277,9 @@ The kernel resource utilization is shown in \cref{tab:fpga-util}.
     128$\times$128 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
     100$\times$100 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
     84$\times$84 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
-    64$\times$64 & \SI{33}{\percent} & \SI{10}{\percent} & \SI{68}{\percent} & \SI{172.8}{\mega\hertz}  \\
+    64$\times$64 & \SI{33}{\percent} & \SI{10}{\percent} & \SI{68}{\percent} & \SI{172.8}{\mega\hertz}  \\ % kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx
     32$\times$32 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
-    16$\times$16 & \SI{17}{\percent} & \SI{3}{\percent} & \SI{30}{\percent} & \SI{209.16}{\mega\hertz}  \\
+    16$\times$16 & \SI{17}{\percent} & \SI{3}{\percent} & \SI{30}{\percent} & \SI{209.16}{\mega\hertz}  \\ % kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx
     \bottomrule
   \end{tabular}
 \end{table}
