@@ -10,7 +10,6 @@ from keras.datasets import mnist
 import pickle
 import sys
 
-import itertools
 
 if platform == "darwin":
     VENDOR_NAME = "apple"
@@ -22,7 +21,9 @@ DEVICE_TYPE = cl.device_type.GPU if VENDOR_NAME == 'apple' or VENDOR_NAME == 'nv
 NN_T = np.float32
 
 class FPGATest:
-    minibatch_size = 128
+
+    LAYER_FILENAME = "layer_h128_{0}.p"
+    minibatch_size = 10000
     rows_in_1 = 28*28
     rows_out_1 = 128
 
@@ -90,14 +91,14 @@ class FPGATest:
 
         self.kForward = program.forward
         self.kForwardSoftMax = program.forward_softmax
-        self.kBackWardFirstDelta = program.backward_first_delta
-        self.kBackward = program.backward
+        # self.kBackWardFirstDelta = program.backward_first_delta
+        # self.kBackward = program.backward
 
         self.kForward.set_scalar_arg_dtypes([None, None, None, None, np.int32, np.int32, np.int32, np.int32])
         self.kForwardSoftMax.set_scalar_arg_dtypes([None, np.int32, np.int32])
-        self.kBackWardFirstDelta.set_scalar_arg_dtypes([None, None, None, np.int32, np.int32])
-        self.kBackward.set_scalar_arg_dtypes(
-            [None, None, None, None, NN_T, NN_T, np.int32, np.int32, np.int32])
+        # self.kBackWardFirstDelta.set_scalar_arg_dtypes([None, None, None, np.int32, np.int32])
+        # self.kBackward.set_scalar_arg_dtypes(
+        #    [None, None, None, None, NN_T, NN_T, np.int32, np.int32, np.int32])
 
         self.queue = cl.CommandQueue(self.ctx)
 
@@ -237,7 +238,8 @@ class FPGATest:
         # Bias additions and broadcast plus matrix mult.
         ops = self.rows_out_1 * self.minibatch_size + (2 * self.rows_in_1 - 1) * self.minibatch_size * self.rows_out_1
         ops += self.rows_out_2 * self.minibatch_size + (2 * self.rows_in_2 - 1) * self.minibatch_size * self.rows_out_2
-        print("Total operations: {0} billion.".format(ops / 1e9))
+        ops += self.rows_out_2 * (4 + 60) + 1
+        print("Total operations: {0} billion per batch.".format(ops / 1e9))
         return ops
 
     def create_buffers(self):
@@ -261,12 +263,12 @@ class FPGATest:
         #self.weights_1 = self.aligned(np.random.uniform(self.data_min, self.data_max, size=size_weights_1).astype(NN_T), alignment=64)
         #self.weights_2 = self.aligned(np.random.uniform(self.data_min, self.data_max, size=size_weights_2).astype(NN_T), alignment=64)
 
-        tmp_l0 = pickle.load(open('layer_h128_0.p', 'rb'))
-        self.bias_1 = tmp_l0['bias'].reshape(size_bias_1)
-        self.weights_1 = tmp_l0['weights'].reshape(size_weights_1)
-        tmp_l1 = pickle.load(open('layer_h128_1.p', 'rb'))
-        self.bias_2 = tmp_l1['bias'].reshape(size_bias_2)
-        self.weights_2 = tmp_l1['weights'].reshape(size_weights_2)
+        tmp_l0 = pickle.load(open(self.LAYER_FILENAME.format(0), 'rb'))
+        self.bias_1 = self.aligned(tmp_l0['bias'].reshape(size_bias_1), alignment=64)
+        self.weights_1 = self.aligned(tmp_l0['weights'].reshape(size_weights_1), alignment=64)
+        tmp_l1 = pickle.load(open(self.LAYER_FILENAME.format(1), 'rb'))
+        self.bias_2 = self.aligned(tmp_l1['bias'].reshape(size_bias_2), alignment=64)
+        self.weights_2 = self.aligned(tmp_l1['weights'].reshape(size_weights_2), alignment=64)
 
         self.act_out_2 = self.aligned(np.zeros(size_act_out_2, NN_T), alignment=64)
         self.act_out_2_cpu = np.zeros(size_act_out_2, NN_T)
@@ -294,7 +296,7 @@ class FPGATest:
 
     def set_input(self, batch):
         #print(self.x_test[batch*self.minibatch_size:(batch+1)*self.minibatch_size, :, :].reshape((self.minibatch_size, self.rows_in_1)).shape)
-        self.act_1 = self.x_test[batch*self.minibatch_size:(batch+1)*self.minibatch_size, :]
+        self.act_1 = self.aligned(self.x_test[batch*self.minibatch_size:(batch+1)*self.minibatch_size, :],alignment=64)
         #print(self.y_test[batch*self.minibatch_size:(batch+1)*self.minibatch_size].shape)
         self.ground_truth = self.y_test[batch*self.minibatch_size:(batch+1)*self.minibatch_size]
         mf = cl.mem_flags
@@ -317,8 +319,9 @@ class FPGATest:
         print("Transferring act_out to device...")
         self.act_out_2Array = cl.Buffer(self.ctx, mf.WRITE_ONLY | mf.COPY_HOST_PTR, hostbuf=self.act_out_2)
 
-    def retrieve_buffers_from_device(self):
-        print("Transferring act_out from device...")
+    def retrieve_buffers_from_device(self, benchmark=False):
+        if not benchmark:
+            print("Transferring act_out from device...")
 
         cl.enqueue_copy(self.queue, self.act_out_2, self.act_out_2Array).wait()
 
@@ -327,21 +330,10 @@ class FPGATest:
         self.queue.finish()
 
     def count_accuracy(self):
-        self.correct_pred_fpga = 0
-        self.wrong_pred_fpga = 0
-        self.correct_pred_cpu = 0
-        self.wrong_pred_cpu = 0
-
         pred_fpga = np.argmax(self.act_out_2,axis=1)
 
         pred_cpu = np.argmax(self.act_out_2_cpu,axis=1)
-        tmp = 0
-        for i in range(0,self.minibatch_size):
-            if pred_fpga[i] == self.ground_truth[i]:
-                tmp += 1
 
-        if tmp != np.sum(pred_fpga == self.ground_truth):
-            print("=====================\n=====================\n=====================\nNOT EQUAL, BAD counting.=====================\n=====================\n=====================\n")
         self.correct_pred_fpga += np.sum(pred_fpga == self.ground_truth)
         self.wrong_pred_fpga += np.sum(pred_fpga != self.ground_truth)
 
@@ -418,15 +410,36 @@ if __name__ == "__main__":
     fpga_class.send_buffers_to_device()
     batches = int(fpga_class.x_test.shape[0]/fpga_class.minibatch_size)
     print("Running {} batches...".format(batches))
+    fpga_time= 0.0
+    cpu_time=0.0
     for i in range(0, batches):
         fpga_class.set_input(i)
-        fpga_class.fpga_function(True)
-        fpga_class.retrieve_buffers_from_device()
-        fpga_class.cpu_function(True)
-        fpga_class.count_accuracy()
-        fpga_class.print_accuracy()
+        start_time = time.time()
 
+        fpga_class.fpga_function(True)
+
+        fpga_time += time.time() - start_time
+        fpga_class.retrieve_buffers_from_device(True)
+        start_time = time.time()
+
+        fpga_class.cpu_function(True)
+
+        cpu_time += time.time() - start_time
+        fpga_class.count_accuracy()
+        if i % 10 == 0:
+            print("Batch {}/{} done.\n".format(i+1, batches))
+            fpga_class.print_accuracy()
+
+    print("Batch {0}/{0} done.\n".format(batches))
     fpga_class.print_accuracy()
     fpga_class.finish_device_queue()
+
+    ops = fpga_class.getops()
+    print("FPGA Time: {0} usec. {1:.3f} GFLOPS".format(fpga_time / batches * 1e6,
+                                                       ops / 1e9 / (fpga_time / batches)))
+    print("CPU Time: {0} usec. {1:.3f} GFLOPS".format(cpu_time / batches * 1e6,
+                                                      ops / 1e9 / (cpu_time / batches)))
+
+
     #if fpga_class.verify_results() and False:
     #    fpga_class.benchmark()
