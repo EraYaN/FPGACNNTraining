@@ -145,9 +145,9 @@ These mixed-precision units drastically improve the Artificial-Intelligence comp
 Vendors also embrace drastically different formats, notably in Intel’s NERVANA~\cite{nervana} (likely where FlexPoint~\cite{intelflexpoint} is used) and Google’s TPU~\cite{tpuformat} (which have more bits in the exponent compared to the mantissa).
 
 
-\section{A FPGA-based CNN Framework}\label{sec:framework}
+\section{A FPGA-based NN Framework}\label{sec:framework}
 \subsection{Field-Programmable Gate-Arrays}
-%Small intro to FPGAs.
+
 FPGAs can be used for a great variety of things, from accelerating computational algorithms to implementating a hardware design before taping out full chip.
 They are devices that can represent reconfigurable hardware.
 
@@ -161,11 +161,14 @@ Intro to neural networks.
 
 \subsection{FPGA NN Framework}
 A small framework was built, consisting of multiple kernels.
-One simple forward propagation kernel with optional Relu activation function integrated and a forward softmax kernel.
+One simple forward propagation kernel with optional Relu activation function integrated into it and a forward softmax kernel.
 \subsubsection{Design overview}
 \Cref{fig:block-diagram} shows a overview of the system.
 The backwards kernels are a work in progress, so for now we use an external training script.
 The host code, written in python, does a kernel call for every layer.
+And does a final softmax kernel call to get the final prediction.
+For perfomance this could obviously be done on the host, given the limited size of most final layers, but performance is not the main goal of this effort.
+The main goal to make replacing the numerical format easier, and thus all the calculations need to be done in that formats, and an FPGA is better at accomodating that without a huge performance impact.
 
 \begin{figure*}[ht]
   \centering
@@ -182,8 +185,10 @@ This speeds up through put by a large margin.
 Block RAM is equivalent to the shared or local memory of contemporary GPUs.
 
 \subsubsection{Design decisions}
-Decisions taken while designing.
-The *why* we did as we did.
+One of the main choices with the largests effect on implementation as whenever to keep all weight matrices in memory transposed.
+During inference this is very benificial, this makes most reads sequential.
+During training, using stochastic gradient descent, this can be a problem, the weight matrix should now be transposed back.
+But since the artihmetic density of training is higher, the effect might be slightly less pronounced.
 
 \section{Methodology}\label{sec:method}
 \subsection{Experimental Platform}
@@ -213,15 +218,16 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
     \midrule
     Intel i7-3930K & \SI{3.20}{\giga\hertz} \\
     Host RAM & DDR3-\SI{1333}{\mega\hertz} Dual Channel \\
-    Arria 10 (x1) & Nallatech 510T \\
+    Arria 10 ($\times$1) & Nallatech 510T \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 \subsection{Network Tested + Data-set}
 The used example network is a simple multilayer perceptron.
-The main dataset used was MNIST with a layer depth of 1 and a first layer output size of 128.
-So in total a two layer network.
+The main dataset used was MNIST.
+The input layer is has 128 outputs, adn the final layer 10 class outputs.
+So in total a two layer network, or two sets of weight matrices and bias vectors.
 The data set was trained using the first \num{50000} images from the MNIST dataset.
 The last \num{10000} images are used as the test data set.
 Training was done using a batch size of 128.
@@ -239,12 +245,12 @@ The results for the different final FPGA kernels are shown in \cref{tab:kernel-p
     \toprule
     \textbf{Block size} & \textbf{GFLOPS}  \\
     \midrule
-    128x128 & \num{0}  \\
-    100x100 & \num{0} \\
-    84x84 & \num{0}  \\
-    64x64 & \num{14.3}  \\
-    32x32 & \num{0}  \\
-    16x16 & \num{4.1}  \\
+    128$\times$128 & \num{0}  \\
+    100$\times$100 & \num{0} \\
+    84$\times$84 & \num{0}  \\
+    64$\times$64 & \num{14.3}  \\
+    32$\times$32 & \num{0}  \\
+    16$\times$16 & \num{4.1}  \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -260,12 +266,12 @@ The kernel resource utilization is shown in \cref{tab:fpga-util}.
     \toprule
     \textbf{Block size} & \textbf{Logic} & \textbf{DSPs} & \textbf{RAMs} & \textbf{Fmax} \\
     \midrule
-    128x128 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
-    100x100 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
-    84x84 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
-    64x64 & \SI{33}{\percent} & \SI{10}{\percent} & \SI{68}{\percent} & \SI{172.8}{\mega\hertz}  \\
-    32x32 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
-    16x16 & \SI{17}{\percent} & \SI{3}{\percent} & \SI{30}{\percent} & \SI{209.16}{\mega\hertz}  \\
+    128$\times$128 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
+    100$\times$100 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
+    84$\times$84 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
+    64$\times$64 & \SI{33}{\percent} & \SI{10}{\percent} & \SI{68}{\percent} & \SI{172.8}{\mega\hertz}  \\
+    32$\times$32 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
+    16$\times$16 & \SI{17}{\percent} & \SI{3}{\percent} & \SI{30}{\percent} & \SI{209.16}{\mega\hertz}  \\
     \bottomrule
   \end{tabular}
 \end{table}
