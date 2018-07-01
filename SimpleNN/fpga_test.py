@@ -6,7 +6,7 @@ from sys import platform
 import time
 import math
 import keras
-from keras.datasets import mnist
+from keras.datasets import cifar10 as input_data
 import pickle
 import sys
 
@@ -20,19 +20,14 @@ NN_T = np.float32
 
 
 class FPGATest:
-    hidden_layers = 1
+    hidden_layers = 2
     layers = hidden_layers + 2
 
-    LAYER_FILENAME = "layer_test2_{0}.p"
+    LAYER_FILENAME = "layer_cifar_{0}.p"
     minibatch_size = 10000
 
-    layer_height = [28 * 28, 512, 512, 10]
-
-    fpga_iter = 20
-    cpu_iter = 20
-
-    data_max = 1
-    data_min = -data_max
+    #layer_height = [28 * 28, 512, 512, 10] # MNIST
+    layer_height = [32 * 32 * 3, 1024, 512, 512, 10] # CIFAR-10
 
     learn_rate = 0.005
     regulation_strength = 0.002
@@ -100,15 +95,14 @@ class FPGATest:
 
         self.queue = cl.CommandQueue(self.ctx)
 
-        print("Loading MNIST...")
-        _, (self.x_test, self.y_test) = mnist.load_data()
+        print("Loading data...")
+        _, (self.x_test, self.y_test) = input_data.load_data()
 
+        self.y_test = self.y_test.reshape((10000,))
         self.x_test = self.x_test.reshape(10000, self.layer_height[0])
         self.x_test = self.x_test.astype('float32')
         self.x_test /= 255
-        # print(self.x_test[0])
 
-        # self.y_test = keras.utils.to_categorical(self.y_test, self.rows_out_2)
         self.correct_pred_fpga = 0
         self.wrong_pred_fpga = 0
         self.correct_pred_cpu = 0
@@ -226,7 +220,6 @@ class FPGATest:
 
             # Load layer file
             layer_file = pickle.load(open(self.LAYER_FILENAME.format(layer), 'rb'))
-
             # Layer weights
             self.weights[layer] = self.aligned(layer_file['weights'].reshape(size_weights), alignment=64)
             self.bias[layer] = self.aligned(layer_file['bias'].reshape(size_bias), alignment=64)
@@ -253,6 +246,8 @@ class FPGATest:
                                    alignment=64)
         self.act_cpu[0] = self.aligned(self.x_test[batch * self.minibatch_size:(batch + 1) * self.minibatch_size, :],
                                    alignment=64)
+
+
         self.ground_truth = self.y_test[batch * self.minibatch_size:(batch + 1) * self.minibatch_size]
 
         cl.enqueue_copy(self.queue, self.act_buffers[0], self.act[0]).wait()
@@ -282,6 +277,10 @@ class FPGATest:
     def count_accuracy(self):
         prediction_fpga = np.argmax(self.act[self.layers], axis=1)
         prediction_cpu = np.argmax(self.act_cpu[self.layers], axis=1)
+
+        print(prediction_cpu)
+        print(prediction_fpga)
+        print(self.ground_truth)
 
         self.correct_pred_fpga += np.sum(prediction_fpga == self.ground_truth)
         self.wrong_pred_fpga += np.sum(prediction_fpga != self.ground_truth)

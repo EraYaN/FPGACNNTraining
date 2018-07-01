@@ -109,3 +109,9 @@ if ! shopt -oq posix; then
   fi
 fi
 
+CUDA_VER=8.0
+CUDNN_VERSION=7.0.4
+export CUDA_DIR=/usr/local/cuda-$CUDA_VER
+export CUDA_LIB_DIR=/usr/local/cuda-$CUDA_VER/lib64
+export LD_LIBRARY_PATH=/home/oyama_y/apps/cudnn-$CUDA_VER-linux-x64-v$CUDNN_VERSION/lib64:/usr/local/cuda-$CUDA_VER/lib64:$LD_LIBRARY_PATH
+export PATH=/usr/local/cuda-$CUDA_VER/bin:$PATH

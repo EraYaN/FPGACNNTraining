@@ -7,6 +7,9 @@ Gets to 98.40% test accuracy after 20 epochs
 
 from __future__ import print_function
 
+import plaidml.keras
+plaidml.keras.install_backend()
+
 import keras
 from keras.datasets import mnist
 from keras.models import Sequential
@@ -62,6 +65,6 @@ i = 0
 for layer in model.layers:
     data = {"weights": layer.get_weights()[0], "bias": layer.get_weights()[1]}
 
-    pickle.dump(data, open("layer_test2_{}.p".format(i), "wb"))
+    pickle.dump(data, open("layer_mnist_{}.p".format(i), "wb"))
 
     i = i + 1

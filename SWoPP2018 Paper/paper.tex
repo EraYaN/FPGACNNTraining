@@ -225,7 +225,7 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
 
 \subsection{Network Tested + Data-set}
 The used example network is a simple multilayer perceptron.
-The main dataset used was MNIST, so 784 input features.
+The first dataset used was MNIST, so \num{784} input features.
 The structure of the sample MNIST network is.
 \begin{enumerate}
   \item Dense(512)
@@ -236,33 +236,47 @@ The structure of the sample MNIST network is.
   \item Softmax
 \end{enumerate}
 So in total a three layer network, or threes sets of weight matrices and bias vectors.
-The data set was trained using the first \num{50000} images from the MNIST dataset.
+The data set was trained using the first \num{60000} images from the MNIST dataset.
 The last \num{10000} images are used as the test data set.
-Training was done using a batch size of \num{128}.
+The second dataset used was CIFAR10, so \num{3072} input features.
+The structure of the sample CIFAR10 network is.
+\begin{enumerate}
+  \item Dense(1024)
+  \item Relu
+  \item Dense(512)  
+  \item Relu
+  \item Dense(512)  
+  \item Relu
+  \item Dense(10)
+  \item Softmax
+\end{enumerate}
+
+The data set was trained using the first \num{50000} images form the dataset.
+The last \num{10000} images were used as the test data set.
+All training was done using a batch size of \num{128}.
 The CPU code was implemented using the NumPy array.dot function.
 
 \section{Results}\label{sec:result}
-The host (numpy based) code benchmarked at \num{60} GFLOPS for simple inference.
-A first naive implementation clocked about \num{2.5} GFLOPS for this problem size.
+The host (numpy based) code benchmarked at \num{60} GFLOPS for simple inference of the first network and about \num{160} GFLOPS for the second network.
+A first naive implementation on the FPGA clocked about \num{2.5} GFLOPS for this problem size.
 The results for the different final FPGA kernels are shown in \cref{tab:kernel-performance}.
+Larger block sizes would exhaust the block RAM on the used FPGA device.
+The next logical size up from \num{64} would be \num{84} (\num{3}$\cdot$\num{28}), this would use to much of the block RAM already.
 
 \begin{table}[h]
   \centering
   \caption{FPGA Kernel performance}\label{tab:kernel-performance}
-  \begin{tabular}{ll}
+  \begin{tabular}{llll}
     \toprule
-    \textbf{Block size} & \textbf{GFLOPS}  \\
+    \textbf{Block size} & \textbf{GFLOPS MNIST}  & \textbf{GFLOPS CIFAR10}  \\
     \midrule
-    128$\times$128 & \num{0}  \\ % Too big
-    100$\times$100 & \num{0} \\ % Too big (86 is also too big)
-    84$\times$84 & \num{0}  \\
-    64$\times$64 & \num{17.8}  \\ % kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx Network: [28 * 28, 512, 512, 10]
-    32$\times$32 & \num{0}  \\
-    16$\times$16 & \num{4.3}  \\ % kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx Network: [28 * 28, 512, 512, 10]
+    64$\times$64 & \num{17.8} & \num{18.9}  \\ % kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx Network MNIST: [28 * 28, 512, 512, 10] CIFAR: [32 * 32 * 3, 1024, 512, 512, 10]
+    16$\times$16 & \num{4.3} & \num{4.4} \\ % kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx Network MNIST: [28 * 28, 512, 512, 10] CIFAR: [32 * 32 * 3, 1024, 512, 512, 10]
     \bottomrule
   \end{tabular}
 \end{table}
 
+The performance is memory bandwidth limited for these kernels.
 
 \subsection{FPGA Resource Utilization}
 The kernel resource utilization is shown in \cref{tab:fpga-util}.
@@ -273,23 +287,20 @@ The kernel resource utilization is shown in \cref{tab:fpga-util}.
   \begin{tabular}{lllll}
     \toprule
     \textbf{Block size} & \textbf{Logic} & \textbf{DSPs} & \textbf{RAMs} & \textbf{Fmax} \\
-    \midrule
-    128$\times$128 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
-    100$\times$100 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
-    84$\times$84 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
+    \midrule    
     64$\times$64 & \SI{33}{\percent} & \SI{10}{\percent} & \SI{68}{\percent} & \SI{172.8}{\mega\hertz}  \\ % kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx
-    32$\times$32 & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\percent} & \SI{0}{\mega\hertz}  \\
     16$\times$16 & \SI{17}{\percent} & \SI{3}{\percent} & \SI{30}{\percent} & \SI{209.16}{\mega\hertz}  \\ % kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx
     \bottomrule
   \end{tabular}
 \end{table}
 
 \subsection{Training Performance}
-The accuracy after training on the CPU using Keras is \SI{97.9}{\percent}.
+The MNIST network accuracy after training on the CPU using Keras is \SI{97.9}{\percent}.
+And the CIFAR10 accuracy after training is \SI{47.9}{\percent}
 The FPGA gets slightly different floaing point results due to rounding differences but is matches the accuracy.
 
 \section{Conclusion}\label{sec:conclusion}
-
+This framework makes for a good basis to start some research in different number 
 
 \begin{thebibliography}{99}
 
