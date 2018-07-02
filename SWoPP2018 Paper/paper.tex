@@ -231,8 +231,11 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
 \end{table}
 
 \subsection{Network Tested + Data-set}
-The used example network is a simple multilayer perceptron.
-The first data set used was MNIST, so \num{784} input features.
+The used example networks are a simple multi-layer perceptron.
+So all layers are a simple array neurons and every neuron is connected to every neuron in the next layer.
+These layers are often called ``Dense'' layers.
+The first data set used was MNIST, MNIST is a collection of 28\(\times\)28 gray scale images of hand written arabic numerals.
+So the data set provides \num{784} input features.
 The structure of the sample MNIST network is.
 \begin{enumerate}
   \item Dense(512)  \(\to\)  Relu
