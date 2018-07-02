@@ -217,7 +217,7 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
     \textbf{Hardware} & \textbf{Configuration} \\
     \midrule
     Intel i7-3930K & \SI{3.20}{\giga\hertz} \\
-    Host RAM & DDR3-\SI{1333}{\mega\hertz} Dual Channel \\
+    DDR3 RAM & \SI{1333}{\mega\hertz} Dual Channel \\
     Arria 10 ($\times$1) & Nallatech 510T \\
     \bottomrule
   \end{tabular}
@@ -228,12 +228,9 @@ The used example network is a simple multilayer perceptron.
 The first dataset used was MNIST, so \num{784} input features.
 The structure of the sample MNIST network is.
 \begin{enumerate}
-  \item Dense(512)
-  \item Relu
-  \item Dense(512)  
-  \item Relu
-  \item Dense(10)
-  \item Softmax
+  \item Dense(512)  \(\to\)  Relu
+  \item Dense(512)  \(\to\)  Relu
+  \item Dense(10)  \(\to\)  Softmax
 \end{enumerate}
 So in total a three layer network, or threes sets of weight matrices and bias vectors.
 The data set was trained using the first \num{60000} images from the MNIST dataset.
@@ -241,17 +238,13 @@ The last \num{10000} images are used as the test data set.
 The second dataset used was CIFAR10, so \num{3072} input features.
 The structure of the sample CIFAR10 network is.
 \begin{enumerate}
-  \item Dense(1024)
-  \item Relu
-  \item Dense(512)  
-  \item Relu
-  \item Dense(512)  
-  \item Relu
-  \item Dense(10)
-  \item Softmax
+  \item Dense(1024)  \(\to\)  Relu
+  \item Dense(512)  \(\to\)  Relu
+  \item Dense(512)  \(\to\)  Relu
+  \item Dense(10)  \(\to\)  Softmax
 \end{enumerate}
 
-The data set was trained using the first \num{50000} images form the dataset.
+The data set was trained using the first \num{50000} images from the dataset.
 The last \num{10000} images were used as the test data set.
 All training was done using a batch size of \num{128}.
 The CPU code was implemented using the NumPy array.dot function.
