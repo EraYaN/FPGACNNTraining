@@ -93,21 +93,21 @@ Preliminary results show promise for implementations based on precisions or numb
 \section{Introduction}
 The present paper describes our efforts toward a customized and generalized framework for design-space exploration using alternative numerical floating-point formats through FPGAs.
 
-The recent explosion in artificial intelligence – in particular that of deep neural networks based on backpropagation – has triggered a storm in the introduction and creation of specialized compute devices.
+The recent explosion in artificial intelligence – in particular that of deep neural networks based on back-propagation – has triggered a storm in the introduction and creation of specialized compute devices.
 Commercial platforms such as Microsoft’s BrainWave~\cite{msbrainwave}, Google’s TPUs~\cite{googletpu}, and Fujitsu’s DLU~\cite{fujitsudlu} are all examples of specialized circuitry dedicated to low-power, high-performance Deep-Learning (DL) training and/or inference.
 Meanwhile, existing general-purpose manufacturers are empowering their architecture with custom floating-point units that trade precision for performance, such as Intel’s Knights-Mill~\cite{knm} and NVIDIA’s Volta-100~\cite{volta100}.
-It is clear that Artifical Intelligence and Deep-Learning will have a prioritized presence in modern architecture -- today and in the near future.
+It is clear that Artificial Intelligence and Deep-Learning will have a prioritized presence in modern architecture -- today and in the near future.
 
 In the pursuit for faster and more energy efficient deep-learning architecture, there is a need to critically question the long-standing architectural design decision taken by computer architects decades ago.
 One of the oldest design decision concerns the representation of real-valued numbers, otherwise known as the floating-point representation.
 The IEEE-754 floating-point representation is one of the few relics still used unchanged in computing today.
-Reducing the size of the floating-point representation can have dramatical (and positive) impacts on the performance: more compute per unit silicon, more compute per unit bandwidth, and lower power consumption.
+Reducing the size of the floating-point representation can have dramatic (and positive) impacts on the performance: more compute per unit silicon, more compute per unit bandwidth, and lower power consumption.
 Several alternatives to the IEEE-754 format are indeed emerging, such as Microsoft’s Deep-Learning format~\cite{msbrainwave}, Intel’s FlexPoint~\cite{intelflexpoint}, Google’s custom TPU format~\cite{tpuformat}, and Posits~\cite{posits}.
 
 However, exploring the space around IEEE-754 floating-point representations and its alternatives pose a significant engineering problem: hardware and software infrastructure is to tightly coupled to the IEEE-754 standard that changing any part of it incurs a high engineering overhead.
 One alternative is to simulate alternative floating-point representations in software, for example using soft-float or MPFR libraries~\cite{softfloat}, but the resulting performance is often several magnitudes lower than hardware implementations, limiting the size of the study conducted.
 Furthermore, simulating alternative numerical formats in software are incapable of using any compiler optimizations, nor can they leverage the vector instruction often crucial to reach application performance in modern processors.
-Porting the full software infrastructure stack is possible (and inevitable), but is a non-trivial effort that requires changes to the compiler, standard libraries and (possibly) the Application-Binary-Interface (e.g.\`calling convention).
+Porting the full software infrastructure stack is possible (and inevitable), but is a non-trivial effort that requires changes to the compiler, standard libraries and (possibly) the Application-Binary-Interface (e.g.\ calling convention).
 
 A better way to explore floating-point representation is to leverage Field-Programmable Gate-Arrays (FPGAs).
 An FPGA is a device consisting of several millions re-programmable look-up tables (LUTs) that together with programmable routers give a very malleable silicon substrate second only in performance to Application-Specific Integrate Circuits (ASICs).
@@ -139,7 +139,7 @@ FPGAs are not unique to vary the numerical precision of deep neural networks, an
 Most of these focus only on inference (for embedded deployment)  for low-power embedded domains; these include YodaNN~\cite{yodann}, BinaryEYE~\cite{binaryeye} and ChipMunk~\cite{chipmunk}; these ASICs were shown to consume up-to two magnitudes low power compared to similar FPGA solutions.
 
 Commercially most vendors do support some form of reduced precision mode.
-Intel’s Knight’s Milll~\cite{knm} architecture replaces one of the AVX-512 vector units of Knight’s Landing with a Vector Neural Network Instruction (VNNI) unit, capable of performing dot-products in a mixed IEEE-754 16-bit and 32-bit mode.
+Intel’s Knight’s Mill~\cite{knm} architecture replaces one of the AVX-512 vector units of Knight’s Landing with a Vector Neural Network Instruction (VNNI) unit, capable of performing dot-products in a mixed IEEE-754 16-bit and 32-bit mode.
 A similar process (reduced precision multiplication, full precision accumulation) is also applied in NVIDIA’s Volta-100 line GPUs.
 These mixed-precision units drastically improve the Artificial-Intelligence compute capabilities (AI-FLOPs) of modern systems, trading silicon resource for increased compute with arguable small impact on training performance.
 Vendors also embrace drastically different formats, notably in Intel’s NERVANA~\cite{nervana} (likely where FlexPoint~\cite{intelflexpoint} is used) and Google’s TPU~\cite{tpuformat} (which have more bits in the exponent compared to the mantissa).
@@ -148,7 +148,7 @@ Vendors also embrace drastically different formats, notably in Intel’s NERVANA
 \section{A FPGA-based NN Framework}\label{sec:framework}
 \subsection{Field-Programmable Gate-Arrays}
 
-FPGAs can be used for a great variety of things, from accelerating computational algorithms to implementating a hardware design before taping out full chip.
+FPGAs can be used for a great variety of things, from accelerating computational algorithms to implementing a hardware design before taping out full chip.
 They are devices that can represent reconfigurable hardware.
 
 The fabric they are made up of consists of vast arrays of switches and other routing hardware to connect all the functional elements, like multipliers, block RAM and look up tables, in any way possible.
@@ -160,16 +160,17 @@ Intro to neural networks.
 %TODO
 
 \subsection{FPGA NN Framework}
-The goal of this framework is generality, in so far that when finished one can select which numerical format one wants to use and then compile the OpenCL kernel for that format.
-While keeping the same API, so easier comparative research can be done on training performance using the different formats.
+The goal of this framework is generality, in so far that when finished one can select which numerical format one wants to use and then compile the OpenCL kernel for that format. %TODO OpenCL explanation
+While keeping the same API, so easier comparative research can be done on training performance using the different formats. % TODO Figure (Arthur?)
 
 \subsubsection{Design overview}
 \Cref{fig:block-diagram} shows a overview of the system.
 The backwards kernels are a work in progress, so for now we use an external training script.
-The host code, written in python, does a kernel call for every layer.
+The backwards kernels are the kernels that calculate the error and back propagate the error while updating the weights and biases in the network used during training.
+During inference the host code, written in python, does one forward kernel call for every layer.
 And does a final softmax kernel call to get the final prediction.
-For perfomance this could obviously be done on the host, given the limited size of most final layers, but performance is not the main goal of this effort.
-The main goal to make replacing the numerical format easier, and thus all the calculations need to be done in that format, and an FPGA is better at accomodating that without a huge performance impact.
+For performance this could obviously be done on the host, given the limited size of most final layers, but performance is not the main goal of this effort.
+The main goal to make replacing the numerical format easier, and thus all the calculations need to be done in that format, and an FPGA is better at accommodating that without a huge performance impact.
 
 \begin{figure*}[ht]
   \centering
@@ -178,18 +179,23 @@ The main goal to make replacing the numerical format easier, and thus all the ca
 \end{figure*}
 
 \subsubsection{Design details}
-All weight matrices are transposed in memory.
+All weight matrices are transposed in memory, this to optimized the memory access pattern of the matrix-matrix multiplication.
 The main inference is done using an blocking implementation of the matrix multiplication.
-So a block is fetched from the activations and the wieghts and place in the block RAM on the FPGA.
+So a block is fetched from the activations and the weights and placed in the block RAM on the FPGA.
+The computation result is also stored on the block RAM, before a routine writes it back to global memory.
 The block RAM has a much lower latency than the global memory.
-This speeds up through put by a large margin.
+This speeds up throughput by a large margin.
 Block RAM is equivalent to the shared or local memory of contemporary GPUs.
 
 \subsubsection{Design decisions}
-One of the main choices with the largests effect on implementation is whenever to keep all weight matrices in memory transposed.
-During inference this is very benificial, as this makes most reads sequential.
-During training, using stochastic gradient descent, this can be a problem, the weight matrix should now be transposed back.
-But since the artihmetic density of the training process is higher, the effect might be slightly less pronounced.
+One of the main choices with the largest effect on implementation is whenever to keep all weight matrices in memory transposed.
+During inference this is very beneficial, as this makes most reads sequential.
+In early stages of development it sped up the kernel performance by a factor of \num{3}.
+During training, using stochastic gradient descent, this can be a problem though, the weight matrix should now be transposed back for the most efficient memory access patterns.
+But since the arithmetic density of the training process is higher, the effect might be slightly less pronounced.
+An other decision was to take the most outer loop, the loop over all the layers, to the host.
+This loop can not be pipelined since there is serial dependency, so it makes more sense execute this loop on the host CPU.
+This both saves space on the FPGA and it simplifies the generated hardware.
 
 \section{Methodology}\label{sec:method}
 \subsection{Experimental Platform}
@@ -226,7 +232,7 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
 
 \subsection{Network Tested + Data-set}
 The used example network is a simple multilayer perceptron.
-The first dataset used was MNIST, so \num{784} input features.
+The first data set used was MNIST, so \num{784} input features.
 The structure of the sample MNIST network is.
 \begin{enumerate}
   \item Dense(512)  \(\to\)  Relu
@@ -234,9 +240,9 @@ The structure of the sample MNIST network is.
   \item Dense(10)  \(\to\)  Softmax
 \end{enumerate}
 So in total a three layer network, or threes sets of weight matrices and bias vectors.
-The data set was trained using the first \num{60000} images from the MNIST dataset.
+The data set was trained using the first \num{60000} images from the MNIST data set.
 The last \num{10000} images are used as the test data set.
-The second dataset used was CIFAR10, so \num{3072} input features.
+The second data set used was CIFAR10, so \num{3072} input features.
 The structure of the sample CIFAR10 network is.
 \begin{enumerate}
   \item Dense(1024)  \(\to\)  Relu
@@ -245,15 +251,15 @@ The structure of the sample CIFAR10 network is.
   \item Dense(10)  \(\to\)  Softmax
 \end{enumerate}
 
-The data set was trained using the first \num{50000} images from the dataset.
+The data set was trained using the first \num{50000} images from the data set.
 The last \num{10000} images were used as the test data set.
 All training was done using a batch size of \num{128}.
 The CPU code was implemented using the NumPy array.dot function.
 
 \section{Results}\label{sec:result}
-The host (numpy based) code benchmarked at \num{60} GFLOPS for simple inference of the first network and about \num{160} GFLOPS for the second network.
+The host (NumPy based) code benchmarked at \num{60} GFLOPS for simple inference of the first network and about \num{160} GFLOPS for the second network.
 A first naive implementation on the FPGA clocked about \num{2.5} GFLOPS for this problem size.
-Transposing the weight matrix sped up the kernel to around \num{7.5} GFLOPS.
+Transposing the weight matrix sped up the kernel to around \num{7.5} GFLOPS.\@
 The results for the different final FPGA kernels are shown in \cref{tab:kernel-performance}.
 
 \begin{table}[h]
@@ -274,14 +280,14 @@ The performance is memory bandwidth limited for these kernels.
 \subsection{FPGA Resource Utilization}
 The kernel resource utilization is shown in \cref{tab:fpga-util}.
 The main limiting factor is the available block RAM.
-To stop the calculation of extra padding lines in the matrices, the blocksize should be a multiple of most of the layer sizes.
+To stop the calculation of extra padding lines in the matrices, the block size should be a multiple of most of the layer sizes.
 Larger block sizes would exhaust the block RAM on the used FPGA device.
-The next logical size up from \num{64} would be \num{84} (\num{3}$\cdot$\num{28}), this would use to much of the block RAM already.
-This is becasue there are three block buffers and the relationship between blocksize and used block RAM is square.
+The next logical size up from \num{64} would be \num{84} (\num{3}\(\times\)\num{28}), this would use to much of the block RAM already.
+This is because there are three block buffers and the relationship between block size and used block RAM is square.
 
 \begin{table}[h]
   \centering
-  \caption{FPGA Hardware utilisation for different blocksizes}\label{tab:fpga-util}
+  \caption{FPGA Hardware utilization for different block sizes}\label{tab:fpga-util}
   \begin{tabular}{lllll}
     \toprule
     \textbf{Block size} & \textbf{Logic} & \textbf{DSPs} & \textbf{RAMs} & \textbf{Fmax} \\
@@ -295,13 +301,12 @@ This is becasue there are three block buffers and the relationship between block
 \subsection{Training Performance}
 The MNIST network accuracy after training on the CPU using Keras is \SI{97.9}{\percent}.
 And the CIFAR10 accuracy after training is \SI{47.9}{\percent}
-The FPGA gets slightly different floaing point results due to rounding differences but is matches the accuracy.
+The FPGA gets slightly different floating point results due to rounding differences but is matches the accuracy.
 
 \section{Conclusion}\label{sec:conclusion}
 This framework makes for a good basis to start some research into different number formats.
 CPU emulations of different formats reach very low performances.
-Due to the FPGA's ability to use any numerical format that is required, the current implementation should not show the same performance degradation.
-
+Due to the FPGAs ability to use any numerical format that is required, the current implementation should not show the same performance degradation.
 
 
 \begin{thebibliography}{99}
