@@ -42,15 +42,12 @@ y_test = keras.utils.to_categorical(y_test, num_classes)
 model = Sequential()
 model.add(Dense(1024, input_shape=(32 * 32 * 3,)))
 model.add(Activation('relu'))
-model.add(Dropout(0.2))
 
 model.add(Dense(512))
 model.add(Activation('relu'))
-model.add(Dropout(0.2))
 
 model.add(Dense(512))
 model.add(Activation('relu'))
-model.add(Dropout(0.2))
 
 model.add(Dense(num_classes))
 model.add(Activation('softmax'))

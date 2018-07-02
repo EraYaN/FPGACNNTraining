@@ -168,7 +168,7 @@ The backwards kernels are a work in progress, so for now we use an external trai
 The host code, written in python, does a kernel call for every layer.
 And does a final softmax kernel call to get the final prediction.
 For perfomance this could obviously be done on the host, given the limited size of most final layers, but performance is not the main goal of this effort.
-The main goal to make replacing the numerical format easier, and thus all the calculations need to be done in that formats, and an FPGA is better at accomodating that without a huge performance impact.
+The main goal to make replacing the numerical format easier, and thus all the calculations need to be done in that format, and an FPGA is better at accomodating that without a huge performance impact.
 
 \begin{figure*}[ht]
   \centering
@@ -185,8 +185,8 @@ This speeds up through put by a large margin.
 Block RAM is equivalent to the shared or local memory of contemporary GPUs.
 
 \subsubsection{Design decisions}
-One of the main choices with the largests effect on implementation as whenever to keep all weight matrices in memory transposed.
-During inference this is very benificial, this makes most reads sequential.
+One of the main choices with the largests effect on implementation is whenever to keep all weight matrices in memory transposed.
+During inference this is very benificial, as this makes most reads sequential.
 During training, using stochastic gradient descent, this can be a problem, the weight matrix should now be transposed back.
 But since the artihmetic density of training is higher, the effect might be slightly less pronounced.
 
@@ -260,8 +260,6 @@ The CPU code was implemented using the NumPy array.dot function.
 The host (numpy based) code benchmarked at \num{60} GFLOPS for simple inference of the first network and about \num{160} GFLOPS for the second network.
 A first naive implementation on the FPGA clocked about \num{2.5} GFLOPS for this problem size.
 The results for the different final FPGA kernels are shown in \cref{tab:kernel-performance}.
-Larger block sizes would exhaust the block RAM on the used FPGA device.
-The next logical size up from \num{64} would be \num{84} (\num{3}$\cdot$\num{28}), this would use to much of the block RAM already.
 
 \begin{table}[h]
   \centering
@@ -280,6 +278,12 @@ The performance is memory bandwidth limited for these kernels.
 
 \subsection{FPGA Resource Utilization}
 The kernel resource utilization is shown in \cref{tab:fpga-util}.
+The main limiting factor is the available block RAM.
+To stop the calculation of extra padding lines in the matrices, the blocksize should be a multiple of most of the layer sizes.
+Larger block sizes would exhaust the block RAM on the used FPGA device.
+The next logical size up from \num{64} would be \num{84} (\num{3}$\cdot$\num{28}), this would use to much of the block RAM already.
+This is becasue there are three block buffers and the relationship between blocksize and used block RAM is square.
+
 
 \begin{table}[h]
   \centering
@@ -300,7 +304,9 @@ And the CIFAR10 accuracy after training is \SI{47.9}{\percent}
 The FPGA gets slightly different floaing point results due to rounding differences but is matches the accuracy.
 
 \section{Conclusion}\label{sec:conclusion}
-This framework makes for a good basis to start some research in different number 
+This framework makes for a good basis to start some research into different number formats.
+CPU emulations of different formats reach very low performances.
+So the expect to reach about similar performance on FPGA implementation using alternative floating point formats. %TODO Arthur performance metrics?
 
 \begin{thebibliography}{99}
 
