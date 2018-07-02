@@ -160,8 +160,9 @@ Intro to neural networks.
 %TODO
 
 \subsection{FPGA NN Framework}
-A small framework was built, consisting of multiple kernels.
-One simple forward propagation kernel with optional Relu activation function integrated into it and a forward softmax kernel.
+The goal of this framework is generality, in so far that when finished one can select which numerical format one wants to use and then compile the OpenCL kernel for that format.
+While keeping the same API, so easier comparative research can be done on training performance using the different formats.
+
 \subsubsection{Design overview}
 \Cref{fig:block-diagram} shows a overview of the system.
 The backwards kernels are a work in progress, so for now we use an external training script.
@@ -188,7 +189,7 @@ Block RAM is equivalent to the shared or local memory of contemporary GPUs.
 One of the main choices with the largests effect on implementation is whenever to keep all weight matrices in memory transposed.
 During inference this is very benificial, as this makes most reads sequential.
 During training, using stochastic gradient descent, this can be a problem, the weight matrix should now be transposed back.
-But since the artihmetic density of training is higher, the effect might be slightly less pronounced.
+But since the artihmetic density of the training process is higher, the effect might be slightly less pronounced.
 
 \section{Methodology}\label{sec:method}
 \subsection{Experimental Platform}
