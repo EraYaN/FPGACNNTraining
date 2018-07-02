@@ -64,7 +64,7 @@
 
 \begin{document}
 
-\title{Accelerating Deep Neural Network Training on FPGAs Facilitating the Use of Variable Precision}
+\title{Towards Accelerating Deep Neural Network Training on FPGAs Facilitating the Use of Variable Precision}
 
 \affiliate{TiTech}{Tokyo Institute of Technology, 
 Meguro, Tokyo 152--8550, Japan}
@@ -252,6 +252,7 @@ The CPU code was implemented using the NumPy array.dot function.
 \section{Results}\label{sec:result}
 The host (numpy based) code benchmarked at \num{60} GFLOPS for simple inference of the first network and about \num{160} GFLOPS for the second network.
 A first naive implementation on the FPGA clocked about \num{2.5} GFLOPS for this problem size.
+Transposing the weight matrix sped up the kernel to around \num{7.5} GFLOPS.
 The results for the different final FPGA kernels are shown in \cref{tab:kernel-performance}.
 
 \begin{table}[h]
@@ -277,7 +278,6 @@ Larger block sizes would exhaust the block RAM on the used FPGA device.
 The next logical size up from \num{64} would be \num{84} (\num{3}$\cdot$\num{28}), this would use to much of the block RAM already.
 This is becasue there are three block buffers and the relationship between blocksize and used block RAM is square.
 
-
 \begin{table}[h]
   \centering
   \caption{FPGA Hardware utilisation for different blocksizes}\label{tab:fpga-util}
@@ -299,7 +299,9 @@ The FPGA gets slightly different floaing point results due to rounding differenc
 \section{Conclusion}\label{sec:conclusion}
 This framework makes for a good basis to start some research into different number formats.
 CPU emulations of different formats reach very low performances.
-So the expect to reach about similar performance on FPGA implementation using alternative floating point formats. %TODO Arthur performance metrics?
+Due to the FPGA's ability to use any numerical format that is required, the current implementation should not show the same performance degradation.
+
+
 
 \begin{thebibliography}{99}
 
