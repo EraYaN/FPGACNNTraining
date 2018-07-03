@@ -365,12 +365,11 @@ And the CIFAR-10 accuracy after training is \SI{47.9}{\percent}
 The FPGA gets slightly different floating point results due to rounding differences but is matches the accuracy.
 
 \section{Conclusion}\label{sec:conclusion}
-This framework makes for a good basis to start some research into different number formats.
-CPU emulations of different formats reach very low performances.
-Due to the FPGAs ability to use any numerical format that is required, the current implementation should not show the same performance degradation.
+We have introduced and described our efforts to create a general-purpose Deep-Learning framework for design-space exploration of numerical formats. While still in the early stages, we have focused on generality. We have shown interoperability with Keras, where we can train weights offline and import them into our framework with little effort. We evaluated the performance and resource consumption of our design on the FPGAs, and made sure that the inferred accuracy is correct. We are currently working on implementing the training phase, as well as the choice of numerical format to be used in both the inference and training part of our framework.
+
 
 \section{Acknowledgment}\label{sec:acknowledgment}
-%TODO
+This work was partially supported by JSPS KAKENHI Grant Number JP16F16764, the JSPS Postdoctoral fellowship under grant P16764.
 
 \begin{thebibliography}{99}
 
