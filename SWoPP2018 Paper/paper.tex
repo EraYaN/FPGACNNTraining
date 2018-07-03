@@ -150,23 +150,20 @@ Vendors also embrace drastically different formats, notably in Intel’s NERVANA
 
 \section{A FPGA-based NN Framework}\label{sec:framework}
 \subsection{Field-Programmable Gate-Arrays}
-
 FPGAs can be used for a great variety of things, from accelerating computational algorithms to implementing a hardware design before taping out full chip.
-They are devices that can represent reconfigurable hardware.
-A normal FPGA work-flow consists of writing in a hardware description language.
-Then synthesizing the design and finally placing and routing the design.
-This is a lengthy process and complex designs in hardware description languages are hard to maintain.
-In this work we will focus on using the OpenCL interface to the FPGA.
-OpenCL is a framework specified by the Khronos Group\footnote{Specification available at: \url{https://www.khronos.org/opencl/}} in 2009, to work with all kinds of processors, accelerators and other heterogenous compute devices, in recent years the FPGA vendors have made efforts to make it easier to leverage FPGA resources by computer scientists and not only hardware designers.
-So OpenCL is one of the ways to leverage high level synthesis.
-High level synthesis take a design specification in a high level language like C or in this case the modified version of C99 that is used for OpenCL kernels.
-And the synthesizer makes an RTL design description from this design automatically after which the normal work-flow is resumed.
-
+They are devices that can belong to the class of fine-grained reconfigurable devices.\\
 FPGAs are made up of a reconfigurable fabric.
 The fabric they are made up of consists of vast arrays of switches and other routing hardware to connect all the functional elements, like multipliers, block RAMs and LUTs, in any way possible.
 The LUTs can be used to implement any mathematical function, like addition, multiplication, boolean functions and more.
 This makes them very suitable for the research described in this paper.
 It gives total freedom to design a hardware implementation to explore algorithms in a hardware setting without having to resort to software simulations and the performance limitations that follow from that.
+
+The usual FPGA work-flow consists of writing in a hardware description language, synthesizing the design and finally place and routing the desig onto the FGPA resources.
+This is a lengthy process and complex designs in hardware description languages are hard to maintain.
+In this work we will focus on using the OpenCL interface to the FPGA.
+OpenCL is a framework specified by the Khronos Group\footnote{Specification available at: \url{https://www.khronos.org/opencl/}} in 2009, to work with all kinds of processors, accelerators and other heterogenous compute devices, in recent years the FPGA vendors have made efforts to make it easier to leverage FPGA resources by computer scientists and not only hardware designers.
+So OpenCL is one of the ways to leverage high level synthesis.
+High-level synthesis takes a design specification in a high level language like C or in this case the modified version of C99 that is used for OpenCL kernels and creates an RTL design description for this design automatically after which the normal work-flow is resumed.
 
 \begin{figure}[ht]
   \centering
@@ -200,7 +197,7 @@ At this point in time, our framework focuses on forward propagation.
 We aspire to create a neural network framework that allows design-space exploration with different numerical data formats.
 Our framework, illustrated in \cref{fig:overview}, consists of a number of components.
 We have chosen to rely on Python as the high-level frontend for our framework.
-It is through python that a user create a networks, selects inputs, and decides what data formats to use.
+It is through Python that a user creates networks, selects inputs, and decides what data formats to use.
 Once a particular configuration is selected, our framework generates data-type oblivious training and inference code that targets Intel's OpenCL SDK for FPGAs.
 By data-type oblivious we mean that all operations associated with any particular data-type representation remain unresolved at the point of creation, as they will not depend on any of the native data-types or functionality of the OpenCL language.
 Instead, our Python framework invokes a Data-type selector, which automatically generates a low-level hardware description language (HDL) library that contain commonly used operators for the selected data-type.
@@ -211,12 +208,12 @@ The present paper focuses on the IEEE-754 part of inference, where training and 
 
 \subsubsection{Design overview}
 \Cref{fig:block-diagram} shows a overview of the system.
-The backwards kernels are a work in progress, so for now we use an external training script.
+The backwards kernels are a work in progress, so for now we leverage external frameworks for training.
 The backwards kernels are the kernels that calculate the error and back propagate the error while updating the weights and biases in the network used during training.
-During inference the host code, written in python, does one forward kernel call for every layer.
-And does a final softmax kernel call to get the final prediction.
+During inference the host code, written in Python, does one forward kernel call for every layer.
+Finally it does a final softmax kernel call to get the final prediction.
 For performance this could obviously be done on the host, given the limited size of most final layers, but performance is not the main goal of this effort.
-The main goal to make replacing the numerical format easier, and thus all the calculations need to be done in that format, and an FPGA is better at accommodating that without a huge performance impact.
+The main goal is to simplify changing the numerical format, and thus all the calculations need to be done in that format, and an FPGA is better at accommodating that without a huge performance impact. % TODO add citation for "HUGE"
 
 \begin{figure*}[p]
   \centering
@@ -237,39 +234,38 @@ The main goal to make replacing the numerical format easier, and thus all the ca
 
 \subsubsection{Design details}
 All weight matrices are transposed in memory, this to optimized the memory access pattern of the matrix-matrix multiplication.
-The main inference is done using an blocking implementation of the matrix multiplication.
-So a block is fetched from the activations and the weights and placed in the block RAM on the FPGA.
+The main inference is performed using an blocking implementation of the matrix multiplication.
+First a block is fetched from the matrices containing the activations and weights and is placed in the block RAM on the FPGA.
 The computation result is also stored on the block RAM, before a routine writes it back to global memory.
 The block RAM has a much lower latency than the global memory.
 This speeds up throughput by a large margin.
 Block RAM is equivalent to the shared or local memory of contemporary GPUs.
 
-The OpenCL SDK from Intel used for this design, tries to pipeline loops in single work item kernels, as opposed to NDRange kernels. % Reference to Intel OpenCL Manual?
+The OpenCL SDK from Intel used for this design tries to pipeline loops in single work item kernels, as opposed to NDRange kernels (that are more truthful to the SIMT paradigm).
 To get maximum performance the aim is to get an initiation interval of one.
 That is to say that a new loop iteration is scheduled every clock cycle.
 To get this to work on the inner most loop, one that is essentially a reduction.
-An array is used to store all output in separate locations, this way the loop can be fully unrolled.
-For the containing loops, serial dependencies are to be avoided whenever possible.
-So different loop iterations are fully data-independent.
+An array is used to store all output in separate locations, which enables the loop to be fully unrolled.
+For the loops surrounding the inner most loop, serial dependencies are to be avoided whenever possible, so different loop iterations are fully data-independent.
 For the outermost loop that processes one block this behavior is not possible, since the output block is written to multiple times.
-If there was enough space on the FPGA theoretically multiple blocks would be able to be processed in parallel.
-In the future the training kernel also needs to fit, so it was decided not to try parallelize this further.
+Multiple blocks can theoretically be processed on the FPGA should space allow for it.
+Future revisions of this framework will also include a training phase, and we thus postponed further parallelization efforts until the kernel is complete.
 
 \subsubsection{Design decisions}
-One of the main choices with the largest effect on implementation is whenever to keep all weight matrices in memory transposed.
-During inference this is very beneficial, as this makes most reads sequential.
+One of the main choices with the largest impact on implementation is whenever to keep all weight matrices in memory transposed.
+During inference this is very beneficial, as it makes most reads sequential.
 In early stages of development it sped up the kernel performance by a factor of \num{3}.
-During training, using stochastic gradient descent, this can be a problem though, the weight matrix should now be transposed back for the most efficient memory access patterns.
+During training, using stochastic gradient descent, this can be a problem though, since the weight matrix should now be transposed back for the most efficient memory access patterns.
 But since the arithmetic density of the training process is higher, the effect might be slightly less pronounced.
-An other decision was to take the most outer loop, the loop over all the layers, to the host.
-This loop can not be pipelined since there is serial dependency, so it makes more sense execute this loop on the host CPU.
-This both saves space on the FPGA and it simplifies the generated hardware.
+Another decision was to execute the outermost loop, the one that loops through all the layers, to the host.
+This loop cannot be pipelined due to a serial data-dependency, so it makes more sense execute this loop on the host CPU.
+This saves space on the FPGA and simplifies the hardware design.
 
 \section{Methodology}\label{sec:method}
 \subsection{Experimental Platform}
 The software versions and hardware configuration are shown in respectively \cref{tab:software-versions} and \cref{tab:test-hardware}.
-All kernels were compiled with \texttt{-O3 -fp-relaxed}.
-\texttt{-fp-relaxed} gives the compiler some more freedom with the order of operations, this gives about a \SIrange{10}{15}{\percent} performance benefit.% without changing the numerical output.
+All kernels were compiled with ``\texttt{-O3 -fp-relaxed}''.
+``\texttt{-fp-relaxed}'' gives the compiler some more freedom with the order of operations, this gives about a \SIrange{10}{15}{\percent} performance benefit.% without changing the numerical output.
 \begin{table}[h]
   \centering
   \caption{Used software versions}\label{tab:software-versions}
@@ -302,10 +298,10 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
 \subsection{Test Networks and Inputs}
 
 The used example networks are multi-layer perceptron (MLP).
-So all layers are an array of neurons and every neuron is connected to every neuron in the next layer.
+This means that all layers are an array of neurons and every neuron is connected to every neuron in the next layer.
 These layers are often called ``Dense'' layers.
 The first data set used was MNIST~\cite{lecun2010mnist}, MNIST is a collection of 28\(\times\)28 gray scale images of hand written arabic numerals.
-So the data set provides \num{784} input features.
+So the data set provides \num{784} inputs.
 The structure of the sample MNIST network is shown in \cref{fig:mnist-network}.
 In total a three layer network plus the input layer, or three sets of weight matrices and bias vectors.
 The data set was trained using the first \num{60000} images from the MNIST data set.
@@ -315,7 +311,7 @@ The structure of the sample CIFAR-10 network is shown in \cref{fig:cifar10-netwo
 The data set was trained using the first \num{50000} images from the data set.
 The last \num{10000} images were used as the test data set.
 All training was done using a batch size of \num{128}.
-The CPU code was implemented using the NumPy array.dot function.
+We implemented the CPU code based on NumPy's array.dot function.
 
 \section{Results}\label{sec:result}
 The host (NumPy based) code benchmarked at \num{60} GFLOPS for straight-forward inference of the first network and about \num{160} GFLOPS for the second network.
@@ -359,7 +355,7 @@ This is because there are three block buffers and the relationship between block
   \end{tabular}
 \end{table}
 
-\subsection{Training Performance}
+\subsection{Inferrence Performance}
 The MNIST network test set accuracy after training on the CPU using Keras is \SI{97.9}{\percent}.
 And the CIFAR-10 accuracy after training is \SI{47.9}{\percent}
 The FPGA gets slightly different floating point results due to rounding differences but is matches the accuracy.
