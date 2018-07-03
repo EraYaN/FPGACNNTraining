@@ -67,14 +67,15 @@
 
 \title{Towards Accelerating Deep Neural Network Training on FPGAs Facilitating the Use of Variable Precision}
 
-\affiliate{Riken}{RIKEN Center for Computational Science, Chuo-ku, Kobe, Hyogo 650-0047 Japan}
+
 \affiliate{TiTech}{Tokyo Institute of Technology, 
 Meguro, Tokyo 152--8550, Japan}
 \affiliate{TUDelft}{Delft University of Technology, Mekelweg 2, 2628 CD Delft, Netherlands}
+\affiliate{Riken}{RIKEN Center for Computational Science, Chuo-ku, Kobe, Hyogo 650-0047 Japan}
 
 \author{Erwin de Haan}{TiTech,TUDelft}[e.r.dehaan@student.tudelft.nl]
 \author{Artur Podobas}{TiTech}[podobas.a.aa@m.titech.ac.jp]
-\author{Satoshi Matsuoka}{Riken,TiTech}[matsu@is.titech.ac.jp]
+\author{Satoshi Matsuoka}{TiTech,Riken}[matsu@is.titech.ac.jp]
 
 \begin{abstract}
 The race for larger and deeper neural networks are leading researchers, vendors and practitioners to re-think architectural design decisions taken decades ago in hope to improve performance.
@@ -298,7 +299,7 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
   \end{tabular}
 \end{table}
 
-\subsection{Network Tested + Data-set}
+\subsection{Test Networks and Inputs}
 
 The used example networks are multi-layer perceptron (MLP).
 So all layers are an array of neurons and every neuron is connected to every neuron in the next layer.
@@ -325,12 +326,12 @@ The results for the different final FPGA kernels are shown in \cref{tab:kernel-p
 \begin{table}[h]
   \centering
   \caption{FPGA Kernel performance}\label{tab:kernel-performance}
-  \begin{tabular}{llll}
+  \begin{tabular}{lSS}
     \toprule
     \textbf{Block size} & \textbf{GFLOPS MNIST}  & \textbf{GFLOPS CIFAR-10}  \\
     \midrule
-    64$\times$64 & \num{17.8} & \num{18.9}  \\ % kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx Network MNIST: [28 * 28, 512, 512, 10] CIFAR: [32 * 32 * 3, 1024, 512, 512, 10]
-    16$\times$16 & \num{4.3} & \num{4.4} \\ % kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx Network MNIST: [28 * 28, 512, 512, 10] CIFAR: [32 * 32 * 3, 1024, 512, 512, 10]
+    64$\times$64 & 17.8 & 18.9  \\ % kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx Network MNIST: [28 * 28, 512, 512, 10] CIFAR: [32 * 32 * 3, 1024, 512, 512, 10]
+    16$\times$16 & 4.3 & 4.4 \\ % kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx Network MNIST: [28 * 28, 512, 512, 10] CIFAR: [32 * 32 * 3, 1024, 512, 512, 10]
     \bottomrule
   \end{tabular}
 \end{table}
