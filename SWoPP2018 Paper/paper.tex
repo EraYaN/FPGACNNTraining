@@ -188,10 +188,9 @@ Inferring (predicting) using a deep neural network is done by connecting the inp
 This effort is called \textit{forward propagation}. Training the network is done in a similar but reverse fashion -- errors are calculated at the output and propagated backwards.
 At this point in time, our framework focuses on forward propagation.
 
-
-\begin{figure*}[ht]
+\begin{figure*}[p]
   \centering
-  \includegraphics[width=\linewidth]{training_overview.pdf}
+  \includegraphics[width=0.7\linewidth]{training_overview.pdf}
   \caption{Overview over our framework, showing blocks existing (black) and components currently worked on (gray).}\label{fig:overview}
 \end{figure*}
 
@@ -217,10 +216,21 @@ And does a final softmax kernel call to get the final prediction.
 For performance this could obviously be done on the host, given the limited size of most final layers, but performance is not the main goal of this effort.
 The main goal to make replacing the numerical format easier, and thus all the calculations need to be done in that format, and an FPGA is better at accommodating that without a huge performance impact.
 
-\begin{figure*}[ht]
+\begin{figure*}[p]
   \centering
-  \includegraphics[width=\linewidth]{block-diagram.pdf}
-  \caption{Block diagram of the implementation, On the left the host code, and on the right side the device code. The host side orchestrates all the computation on the device side.}\label{fig:block-diagram}
+  \includegraphics[width=0.7\linewidth]{block-diagram.pdf}
+  \caption{Block diagram of the implementation, on the left the host code, and on the right side the device code. The host side orchestrates all the computation on the device side.}\label{fig:block-diagram}
+\end{figure*}
+
+\begin{figure*}[p]
+  \centering
+  \includegraphics[width=0.6\linewidth]{mnist-network.pdf}
+  \caption{MNIST sample network configuration}\label{fig:mnist-network}
+\end{figure*}
+\begin{figure*}[p]
+  \centering
+  \includegraphics[width=0.8\linewidth]{cifar10-network.pdf}
+  \caption{CIFAR-10 sample network configuration}\label{fig:cifar10-network}
 \end{figure*}
 
 \subsubsection{Design details}
@@ -288,37 +298,24 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
 \end{table}
 
 \subsection{Network Tested + Data-set}
-The used example networks are a simple multi-layer perceptron.
-So all layers are a simple array neurons and every neuron is connected to every neuron in the next layer.
+The used example networks are a multi-layer perceptron.
+So all layers are an array neurons and every neuron is connected to every neuron in the next layer.
 These layers are often called ``Dense'' layers.
 The first data set used was MNIST~\cite{lecun2010mnist}, MNIST is a collection of 28\(\times\)28 gray scale images of hand written arabic numerals.
 So the data set provides \num{784} input features.
-The structure of the sample MNIST network is.
-\begin{enumerate}
-  \item Dense(512)  \(\to\)  Relu
-  \item Dense(512)  \(\to\)  Relu
-  \item Dense(10)  \(\to\)  Softmax
-\end{enumerate}
-So in total a three layer network, or threes sets of weight matrices and bias vectors.
+The structure of the sample MNIST network is shown in \cref{fig:mnist-network}.
+In total a three layer network plus the input layer, or three sets of weight matrices and bias vectors.
 The data set was trained using the first \num{60000} images from the MNIST data set.
-The last \num{10000} images are used as the test data set.
-
+The last \num{10000} images are used as the test data set.\\
 The second data set used was CIFAR-10~\cite{krizhevsky2014cifar}, so \num{3072} input features.
-The structure of the sample CIFAR-10 network is.
-\begin{enumerate}
-  \item Dense(1024)  \(\to\)  Relu
-  \item Dense(512)  \(\to\)  Relu
-  \item Dense(512)  \(\to\)  Relu
-  \item Dense(10)  \(\to\)  Softmax
-\end{enumerate}
-
+The structure of the sample CIFAR-10 network is shown in \cref{fig:cifar10-network}.\\
 The data set was trained using the first \num{50000} images from the data set.
 The last \num{10000} images were used as the test data set.
 All training was done using a batch size of \num{128}.
 The CPU code was implemented using the NumPy array.dot function.
 
 \section{Results}\label{sec:result}
-The host (NumPy based) code benchmarked at \num{60} GFLOPS for simple inference of the first network and about \num{160} GFLOPS for the second network.
+The host (NumPy based) code benchmarked at \num{60} GFLOPS for straight-forward inference of the first network and about \num{160} GFLOPS for the second network.
 A first naive implementation on the FPGA clocked about \num{2.5} GFLOPS for this problem size.
 Transposing the weight matrix sped up the kernel to around \num{7.5} GFLOPS.\@
 The results for the different final FPGA kernels are shown in \cref{tab:kernel-performance}.
