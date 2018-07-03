@@ -207,7 +207,7 @@ Instead, our Python framework invokes a Data-type selector, which automatically 
 Once the Register-Transfer Level (RTL) library has been generated, it is merged with the data-type oblivious OpenCL template to yield the final description, which now can be synthesized using EDA tools and used.
 Invisible to the user, our host runtime system handles all communication, invocation and control over the FPGA from the host side.
 
-The present paper focuses on the IEEE-754 part of inference, where training and alternative data-types are on-going and future work.
+The present paper focuses on the IEEE-754 part of inference, where training and alternative data-types are on-going and future work. Althought we do have a posit~\cite{podobasposit} generator ready to be used, it has yet to be integrated into our flow.
 
 \subsubsection{Design overview}
 \Cref{fig:block-diagram} shows a overview of the system.
@@ -336,7 +336,7 @@ The results for the different final FPGA kernels are shown in \cref{tab:kernel-p
   \end{tabular}
 \end{table}
 
-The performance is memory bandwidth limited for these kernels.
+The performance is memory-bound for these kernels. However, given our experience with alterantive numerical formats (most noticable posits~\cite{podobasposit}), we do not expect performance to be degraded when changing numerical format.
 
 \subsection{FPGA Resource Utilization}
 The kernel resource utilization is shown in \cref{tab:fpga-util}.
@@ -537,7 +537,13 @@ This work was partially supported by JSPS KAKENHI Grant Number JP16F16764, the J
   Deep residual learning for image recognition,
   {\it Proceedings of the IEEE conference on computer vision and pattern recognition},
   pp 770--778, 2016
-    
+
+\bibitem{podobasposit}
+  Podobas, Artur and Matsuoka, Satoshi:  
+  Hardware Implementation of POSITs and their application in FPGAs
+  {\it International Parallel and Distributed Processing Symposium Workshops},
+  to appear, 2018
+  
 \end{thebibliography}  
 
 \end{document}
