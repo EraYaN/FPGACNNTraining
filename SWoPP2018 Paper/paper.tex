@@ -99,9 +99,9 @@ Commercial platforms such as Microsoft’s BrainWave~\cite{msbrainwave}, Google�
 Meanwhile, existing general-purpose manufacturers are empowering their architecture with custom floating-point units that trade precision for performance, such as Intel’s Knights-Mill~\cite{knm} and NVIDIA’s Volta-100~\cite{volta100}.
 It is clear that Artificial Intelligence and Deep-Learning will have a prioritized presence in modern architecture -- today and in the near future.
 
-In the pursuit for faster and more energy efficient deep-learning architecture, there is a need to critically question the long-standing architectural design decision taken by computer architects decades ago.
+In the pursuit for faster and more energy efficient deep-learning architecture, there is a need to critically review long-standing architectural design decisions taken by computer architects decades ago.
 One of the oldest design decision concerns the representation of real-valued numbers, otherwise known as the floating-point representation.
-The IEEE-754 floating-point representation is one of the few relics still used unchanged in computing today.
+The IEEE-754 floating-point representation is one of the few relics that remain unchanged in computing today.
 Reducing the size of the floating-point representation can have dramatic (and positive) impacts on the performance: more compute per unit silicon, more compute per unit bandwidth, and lower power consumption.
 Several alternatives to the IEEE-754 format are indeed emerging, such as Microsoft’s Deep-Learning format~\cite{msbrainwave}, Intel’s FlexPoint~\cite{intelflexpoint}, Google’s custom TPU format~\cite{tpuformat}, and Posits~\cite{posits}.
 
@@ -121,7 +121,7 @@ We contribute with the following:
 \item Evaluation and analysis of core computation patterns, including FPGA resource utilization
 \end{itemize}
 
-The remainder of our paper is structure in the following way: \cref{sec:relwork} position our work against other, similar efforts.
+The remainder of our paper is structure in the following way: \cref{sec:relwork} positions our work against other, similar efforts.
 \cref{sec:framework} gives a background to machine learning and FPGAs, and describes our proposed architecture.
 \cref{sec:method} overviews our experimental methodology, and is followed by our preliminary results in \cref{sec:result}.
 We conclude in \cref{sec:conclusion}.
@@ -132,7 +132,7 @@ The large majority of existing work limit themselves to inference, primarily due
 Levering FPGAs have allowed researchers to decrease the number of bits allocate to the numerical representation, going as far as inferring popular networks such as  AlexNET~\cite{krizhevsky2012imagenet} using as few as binary~\cite{shimoda2017all,umuroglu2017finn} (1-bit) weights.
 Inferring networks that uses few bits to represents weights (called Quantized Neural Networks~\cite{courbariaux2016binarized}) requires subtle yet necessary changes to the training phase~\cite{binaryconnect,courbariaux2016binarized,zhou2016dorefa}.
 Lately, modern deep-learning framework are having support for reduced precision training, some driven by leading FPGA vendors such as Xilinx~\cite{xilinxml}.
-Dicecco et al.~\cite{dicecco2017fpga} are are working on a framework similar to ours – training neural networks using FPGAs while modifying the numerical format.
+Dicecco et al.~\cite{dicecco2017fpga} are working on a framework similar to ours that trains neural networks using FPGAs while modifying the numerical format.
 Their work primary focus on the IEEE-754 format and convolution layers where-as we aspire to include alternative format such as posits~\cite{posits}.
 Using posits in deep-learning was intended the focus of Langroudi et al.~\cite{langroudi2018deep}’s work; however, they only compared the performance against fixed-point and only \textit{stored} the weights as posit (the computation was still done using IEEE-754).
 
@@ -162,7 +162,7 @@ And the synthesizer makes an RTL design description from this design automatical
 
 FPGAs are made up of a reconfigurable fabric.
 The fabric they are made up of consists of vast arrays of switches and other routing hardware to connect all the functional elements, like multipliers, block RAMs and LUTs, in any way possible.
-The LUTs can be used to implement any mathematical function, like addition, logical function et cetera.
+The LUTs can be used to implement any mathematical function, like addition, multiplication, boolean functions and more.
 This makes them very suitable for the research described in this paper.
 It gives total freedom to design a hardware implementation to explore algorithms in a hardware setting without having to resort to software simulations and the performance limitations that follow from that.
 
@@ -173,18 +173,18 @@ It gives total freedom to design a hardware implementation to explore algorithms
 \end{figure}
 
 \subsection{Neural Networks}
-An Artificial Neural Network (ANNs) is a system inspired by the biological nervous system-- a system built around the concepts of \textit{neuron} as the main computational agents.
+An Artificial Neural Network (ANNs) is a system inspired by the biological nervous system-- a system built around the concepts of \textit{neuron}s as the main computational agents.
 \Cref{fig:ann-example} illustrates an example of a typical “deep” neural network: a network that consists of a input layer, and output layer, and a number of \textit{hidden} layers in-between.
 The number of hidden layers in modern neural networks can be very large: AlexNet (2012)~\cite{krizhevsky2012imagenet} has eight, VGG16 (2014)~\cite{simonyan2014very} has 16 layers, GoogleNet (2014)~\cite{szegedy2015going} has 22 layers, and ResNet (2016)~\cite{he2016deep} has 152 layers.
-The trend tend seem to go towards larger and deeper neural networks.
+The trend seem to favor larger and deeper neural networks.
 The input layer of a neural network (in our example, a classifier) contains the (possibly pre-processed) inputs, such as images (for image recognition), words (in natural language processing), or motifs (in graph processing).
 In our humble example, the input is an image of an apple, where each pixel has an all-to-all connection to the hidden layer-- a so-called \textit{dense} layer. The dense-layer (or fully-connected layer) is the most basic of all layers, and nearly all (e.g.\ convolution) layers are derived from it.
 Each layers consists of a number of \textit{neurons} – the main compute agent of the network.
 Each edge that connect to a particular neuron is called a \textit{synapse}, and comes with a \textit{weight} (\(w_{i,j}\)) in the figure, where \(i\) is the index of the neuron).
-The neuron integrates the weights (\cref{fig:ann-example}:b) of all input synapses, adds a local bias, and applies a activation function to compute the output of the neuron. The activation function can varies between networks, but commonly used activation functions include: the sigmoid (\(f(x) = \frac{1}{1+e^{-x}}\)), the rectifier (ReLu, \(f(x) = max(0,x)\)), or hyperbolic tangent (\(f(x) = tanh(x)\)).
+The neuron integrates the weights (\cref{fig:ann-example}:b) of all input synapses, adds a local bias, and applies a activation function to compute the output of the neuron. The activation function varies between networks, but commonly used activation functions include: the sigmoid (\(f(x) = \frac{1}{1+e^{-x}}\)), the rectifier (ReLu, \(f(x) = max(0,x)\)), or hyperbolic tangent (\(f(x) = tanh(x)\)).
 In \cref{fig:ann-example}:b (and commonly in image processing network), the simple and compute-\textit{in}expensive ReLu activation function is used in the hidden-layers of the network. The final layer of our classifier neural network is an output layer, \cref{fig:ann-example}:c. In the output layer, the activation function is often a \textit{softmax} (\cref{fig:ann-example}:d), which scales all outputs such that their sum equals one.
 
-Inferring (predicting) using a deep neural network is done by connecting the input to what is to be predicted, and sequentially activating each layer --from the front to the back of the network-- and propagating the output of each layer into the subsequent.
+Inferring (predicting) using a deep neural network is done by connecting the input to what is to be predicted, and sequentially activating each layer --from the front to the back of the network-- and propagating the output of each layer into the next.
 This effort is called \textit{forward propagation}. Training the network is done in a similar but reverse fashion -- errors are calculated at the output and propagated backwards.
 At this point in time, our framework focuses on forward propagation.
 
@@ -239,7 +239,7 @@ To get this to work on the inner most loop, one that is essentially a reduction.
 An array is used to store all output in separate locations, this way the loop can be fully unrolled.
 For the containing loops, serial dependencies are to be avoided whenever possible.
 So different loop iterations are fully data-independent.
-For the outer most loop that processes one block this behavior is not possible, since the output block is written to multiple times.
+For the outermost loop that processes one block this behavior is not possible, since the output block is written to multiple times.
 If there was enough space on the FPGA theoretically multiple blocks would be able to be processed in parallel.
 In the future the training kernel also needs to fit, so it was decided not to try parallelize this further.
 
@@ -257,7 +257,7 @@ This both saves space on the FPGA and it simplifies the generated hardware.
 \subsection{Experimental Platform}
 The software versions and hardware configuration are shown in respectively \cref{tab:software-versions} and \cref{tab:test-hardware}.
 All kernels were compiled with \texttt{-O3 -fp-relaxed}.
-\texttt{-fp-relaxed} gives the compiler some more freedom with the order of operations, this gives about a \SIrange{10}{15}{\percent} performance benefit without changing the numerical output.
+\texttt{-fp-relaxed} gives the compiler some more freedom with the order of operations, this gives about a \SIrange{10}{15}{\percent} performance benefit.% without changing the numerical output.
 \begin{table}[h]
   \centering
   \caption{Used software versions}\label{tab:software-versions}
@@ -288,7 +288,7 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
 \end{table}
 
 \subsection{Network Tested + Data-set}
-The used example networks are a simple multi-layer perceptron.
+The used example networks are multi-layer perceptron (MLP).
 So all layers are a simple array neurons and every neuron is connected to every neuron in the next layer.
 These layers are often called ``Dense'' layers.
 The first data set used was MNIST~\cite{lecun2010mnist}, MNIST is a collection of 28\(\times\)28 gray scale images of hand written arabic numerals.
