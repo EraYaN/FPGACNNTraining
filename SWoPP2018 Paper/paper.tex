@@ -155,9 +155,20 @@ The fabric they are made up of consists of vast arrays of switches and other rou
 This makes them very suitable for the research described in this paper.
 It gives total freedom to design a hardware implementation to explore algorithms in a hardware setting.
 
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{example_ann-crop.pdf}
+  \caption{The basics of artificial ``deep'' neural networks, showing the input (a) layer, the hidden (b) layer, and the output (c-d) layer.}\label{fig:ann-example}
+\end{figure}
+
 \subsection{Neural Networks}
-Intro to neural networks.
-%TODO
+An Artificial Neural Network (ANNs) is a system inspired by the biological nervous system-- a system built around the concepts of \textit{neuron} as the main computational agents.
+Figure~\ref{fig:ann-example} illustrates an example of a typical “deep” neural network: a network that consists of a input layer, and output layer, and a number of \textit{hidden} layers in-between. The number of hidden layers in modern neural networks can be very large: AlexNet (2012)~\cite{krizhevsky2012imagenet} has eight, VGG16 (2014)~\cite{simonyan2014very} has 16 layers, GoogleNet (2014)~\cite{szegedy2015going} has 22 layers, and ResNet (2016)~\cite{he2016deep} has 152 layers. The trend tend seem to go towards larger and deeper neural network.
+The input layer of a neural network (in our example, a classifier) contains the (possibly preprocessed) inputs, such as images (for image recognition), words (in natural language processoing), or motifs (in graph processing). In our humble example, the input is an image of an apple, where each pixel has an all-to-all connection to the hidden layer-- a so-called \textit{dense} layer. The dense-layer (or fully-connected layer) is the most basic of all layers, and nearly all (e.g. convolution) layers are derived from it.
+Each layers consists of a number of \textit{neurons} – the main compute agent of the network. Each edge that connect to a particular neuron is called a \textit{synapse}, and comes with a \textit{weight}($w_{i,j}$ in the figure, where $i$ is the index of the neuron). The neuron integrates the weights (Figure~\ref{fig:ann-example}:b) of all input synapses, adds a local bias, and applies a activation function to compute the output of the neuron. The activation function can varies between networks, but commonly used activation functions include: the sigmoid ($f(x) = \frac{1}{1+e^{-x}}$), the rectifier (ReLu, $f(x) = max(0,x)$), or hyperbolic tangent ($f(x) = tanh(x)$). In Figure~\ref{fig:ann-example}:b (and commonly in image processing network), the simple and compute-\textit{in}expensive ReLu activation function is used in the hidden-layers of the network. The final layer of our classifier neural network is an output layer, Figure~\ref{fig:ann-example}:c. In the output layer, the activation function is often a \textit{softmax} (Figure~\ref{fig:ann-example}:d), which scales all outputs such that their sum equals one.
+
+Inferring (predicting) using a deep neural network is done by connecting the input to what is to be predicted, and sequentially activating each layer -- from the front to the back of the network-- and propagating the output of each layer into the subsequent. This effort is called \textit{forward propagation}. Training the network is done in a similar but reverse fashion -- errors are calculated at the output and propagated backwards. At this point in time, our framework focuses on forward propagation.
+
 
 \subsection{FPGA NN Framework}
 The goal of this framework is generality, in so far that when finished one can select which numerical format one wants to use and then compile the OpenCL kernel for that format. %TODO OpenCL explanation
@@ -457,7 +468,25 @@ Due to the FPGAs ability to use any numerical format that is required, the curre
   Binarized neural networks: Training deep neural networks with weights and activations constrained to+ 1 or-1,
   {\it arXiv preprint arXiv:1602.02830},
   2016
-  
+
+\bibitem{simonyan2014very}
+    Simonyan, Karen and Zisserman, Andrew:
+    Very deep convolutional networks for large-scale image recognition,
+    {\it arXiv preprint arXiv:1409.1556},
+    2014
+
+\bibitem{szegedy2015going}
+    Szegedy, Christian and Liu, Wei and Jia, Yangqing and Sermanet, Pierre and Reed, Scott and Anguelov, Dragomir and Erhan, Dumitru and Vanhoucke, Vincent and Rabinovich, Andrew:
+    Going deeper with convolutions,
+    {\it Proceedings of the IEEE conference on computer vision and pattern recognition},
+    pp 1--9, 2015
+
+\bibitem{he2016deep}
+    He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian:
+    Deep residual learning for image recognition,
+    {\it Proceedings of the IEEE conference on computer vision and pattern recognition},
+    pp 770--778, 2016
+    
 \end{thebibliography}  
 
 \end{document}
