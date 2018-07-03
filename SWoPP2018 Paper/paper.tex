@@ -170,9 +170,16 @@ Each layers consists of a number of \textit{neurons} – the main compute agent 
 Inferring (predicting) using a deep neural network is done by connecting the input to what is to be predicted, and sequentially activating each layer -- from the front to the back of the network-- and propagating the output of each layer into the subsequent. This effort is called \textit{forward propagation}. Training the network is done in a similar but reverse fashion -- errors are calculated at the output and propagated backwards. At this point in time, our framework focuses on forward propagation.
 
 
-\subsection{FPGA NN Framework}
-The goal of this framework is generality, in so far that when finished one can select which numerical format one wants to use and then compile the OpenCL kernel for that format. %TODO OpenCL explanation
-While keeping the same API, so easier comparative research can be done on training performance using the different formats. % TODO Figure (Arthur?)
+\begin{figure*}[ht]
+  \centering
+  \includegraphics[width=\linewidth]{training_overview.pdf}
+  \caption{Overview over our framework, showing blocks existing (white) and components currently worked on (gray)}\label{fig:overview}
+\end{figure*}
+
+\subsection{FPGA Neural Network Framework}
+We aspire to create a neural network framework that allows design-space exploration with different numerical data formats. Our framework, illustrated in Figure~\ref{fig:overview}, consists of a number of components. We have chosen to rely on Python as the high-level frontend for our frameowork. It is through python that a user create a networks, selects inputs, and decides what data formats to use. Once a particular configuration is selected, our framework generates data-type oblivious training and inference code that targets Intel's OpenCL SDK for FPGAs. By data-type oblivious we mean that all operations associated with any particular data-type representation remain unresolved at the point of creation, as they will not depend on any of the native data-types or functionality of the OpenCL language. Instead, our Python framework invokes a Data-type selector, which automatically generates a low-level hardware description lanague (HDL) library that contain commonly used operators for the selected data-type. Once the Register-Transfer Level (RTL) library has been generated, it is merged with the data-type oblivious OpenCL template to yield the final description, which now can be synthesized using EDA tools and used. Invisible to the user, our host runtime system handles all communication, invocation and control over the FPGA from the host side.
+
+The present paper focuses on the IEEE-754 part of inference, where training and alternative data-types are on-going and future work.
 
 \subsubsection{Design overview}
 \Cref{fig:block-diagram} shows a overview of the system.
