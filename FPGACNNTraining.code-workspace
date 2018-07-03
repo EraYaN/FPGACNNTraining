@@ -13,11 +13,13 @@
 			"CIFAR",
 			"GFLOPS",
 			"Keras",
+			"LUTs",
 			"MNIST",
 			"Nallatech",
 			"Quartus",
 			"Relu",
 			"Softmax",
+			"parallelize",
 			"perceptron"
 		]
 	}

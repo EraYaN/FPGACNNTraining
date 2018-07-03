@@ -4,7 +4,8 @@
   
   %\usepackage[dvips]{graphicx}
   \usepackage{latexsym}
-  \usepackage{url}
+  \usepackage[hyphens]{url}
+  \Urlmuskip=0mu plus 1mu
   
   \usepackage{diagbox}
   
@@ -150,10 +151,20 @@ Vendors also embrace drastically different formats, notably in Intel’s NERVANA
 
 FPGAs can be used for a great variety of things, from accelerating computational algorithms to implementing a hardware design before taping out full chip.
 They are devices that can represent reconfigurable hardware.
+A normal FPGA work-flow consists of writing in a hardware description language.
+Then synthesizing the design and finally placing and routing the design.
+This is a lengthy process and complex designs in hardware description languages are hard to maintain.
+In this work we will focus on using the OpenCL interface to the FPGA.
+OpenCL is a framework specified by the Khronos Group\footnote{Specification available at: \url{https://www.khronos.org/opencl/}} in 2009, to work with all kinds of processors, accelerators and other heterogenous compute devices, in recent years the FPGA vendors have made efforts to make it easier to leverage FPGA resources by computer scientists and not only hardware designers.
+So OpenCL is one of the ways to leverage high level synthesis.
+High level synthesis take a design specification in a high level language like C or in this case the modified version of C99 that is used for OpenCL kernels.
+And the synthesizer makes an RTL design description from this design automatically after which the normal work-flow is resumed.
 
-The fabric they are made up of consists of vast arrays of switches and other routing hardware to connect all the functional elements, like multipliers, block RAM and look up tables, in any way possible.
+FPGAs are made up of a reconfigurable fabric.
+The fabric they are made up of consists of vast arrays of switches and other routing hardware to connect all the functional elements, like multipliers, block RAMs and LUTs, in any way possible.
+The LUTs can be used to implement any mathematical function, like addition, logical function et cetera.
 This makes them very suitable for the research described in this paper.
-It gives total freedom to design a hardware implementation to explore algorithms in a hardware setting.
+It gives total freedom to design a hardware implementation to explore algorithms in a hardware setting without having to resort to software simulations and the performance limitations that follow from that.
 
 \begin{figure}[ht]
   \centering
@@ -165,7 +176,7 @@ It gives total freedom to design a hardware implementation to explore algorithms
 An Artificial Neural Network (ANNs) is a system inspired by the biological nervous system-- a system built around the concepts of \textit{neuron} as the main computational agents.
 \Cref{fig:ann-example} illustrates an example of a typical “deep” neural network: a network that consists of a input layer, and output layer, and a number of \textit{hidden} layers in-between.
 The number of hidden layers in modern neural networks can be very large: AlexNet (2012)~\cite{krizhevsky2012imagenet} has eight, VGG16 (2014)~\cite{simonyan2014very} has 16 layers, GoogleNet (2014)~\cite{szegedy2015going} has 22 layers, and ResNet (2016)~\cite{he2016deep} has 152 layers.
-The trend tend seem to go towards larger and deeper neural network.
+The trend tend seem to go towards larger and deeper neural networks.
 The input layer of a neural network (in our example, a classifier) contains the (possibly pre-processed) inputs, such as images (for image recognition), words (in natural language processing), or motifs (in graph processing).
 In our humble example, the input is an image of an apple, where each pixel has an all-to-all connection to the hidden layer-- a so-called \textit{dense} layer. The dense-layer (or fully-connected layer) is the most basic of all layers, and nearly all (e.g.\ convolution) layers are derived from it.
 Each layers consists of a number of \textit{neurons} – the main compute agent of the network.
@@ -221,6 +232,17 @@ The block RAM has a much lower latency than the global memory.
 This speeds up throughput by a large margin.
 Block RAM is equivalent to the shared or local memory of contemporary GPUs.
 
+The OpenCL SDK from Intel used for this design, tries to pipeline loops in single work item kernels, as opposed to NDRange kernels. % Reference to Intel OpenCL Manual?
+To get maximum performance the aim is to get an initiation interval of one.
+That is to say that a new loop iteration is scheduled every clock cycle.
+To get this to work on the inner most loop, one that is essentially a reduction.
+An array is used to store all output in separate locations, this way the loop can be fully unrolled.
+For the containing loops, serial dependencies are to be avoided whenever possible.
+So different loop iterations are fully data-independent.
+For the outer most loop that processes one block this behavior is not possible, since the output block is written to multiple times.
+If there was enough space on the FPGA theoretically multiple blocks would be able to be processed in parallel.
+In the future the training kernel also needs to fit, so it was decided not to try parallelize this further.
+
 \subsubsection{Design decisions}
 One of the main choices with the largest effect on implementation is whenever to keep all weight matrices in memory transposed.
 During inference this is very beneficial, as this makes most reads sequential.
@@ -247,6 +269,7 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
     Keras & v2.2.0 \\
     TensorFlow & v1.8.0 \\
     Intel Quartus & v17.1.0 \\
+    Intel OpenCL & v1.1 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -268,7 +291,7 @@ All kernels were compiled with \texttt{-O3 -fp-relaxed}.
 The used example networks are a simple multi-layer perceptron.
 So all layers are a simple array neurons and every neuron is connected to every neuron in the next layer.
 These layers are often called ``Dense'' layers.
-The first data set used was MNIST, MNIST is a collection of 28\(\times\)28 gray scale images of hand written arabic numerals.
+The first data set used was MNIST~\cite{lecun2010mnist}, MNIST is a collection of 28\(\times\)28 gray scale images of hand written arabic numerals.
 So the data set provides \num{784} input features.
 The structure of the sample MNIST network is.
 \begin{enumerate}
@@ -279,8 +302,9 @@ The structure of the sample MNIST network is.
 So in total a three layer network, or threes sets of weight matrices and bias vectors.
 The data set was trained using the first \num{60000} images from the MNIST data set.
 The last \num{10000} images are used as the test data set.
-The second data set used was CIFAR10, so \num{3072} input features.
-The structure of the sample CIFAR10 network is.
+
+The second data set used was CIFAR-10~\cite{krizhevsky2014cifar}, so \num{3072} input features.
+The structure of the sample CIFAR-10 network is.
 \begin{enumerate}
   \item Dense(1024)  \(\to\)  Relu
   \item Dense(512)  \(\to\)  Relu
@@ -304,7 +328,7 @@ The results for the different final FPGA kernels are shown in \cref{tab:kernel-p
   \caption{FPGA Kernel performance}\label{tab:kernel-performance}
   \begin{tabular}{llll}
     \toprule
-    \textbf{Block size} & \textbf{GFLOPS MNIST}  & \textbf{GFLOPS CIFAR10}  \\
+    \textbf{Block size} & \textbf{GFLOPS MNIST}  & \textbf{GFLOPS CIFAR-10}  \\
     \midrule
     64$\times$64 & \num{17.8} & \num{18.9}  \\ % kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx Network MNIST: [28 * 28, 512, 512, 10] CIFAR: [32 * 32 * 3, 1024, 512, 512, 10]
     16$\times$16 & \num{4.3} & \num{4.4} \\ % kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx Network MNIST: [28 * 28, 512, 512, 10] CIFAR: [32 * 32 * 3, 1024, 512, 512, 10]
@@ -336,8 +360,8 @@ This is because there are three block buffers and the relationship between block
 \end{table}
 
 \subsection{Training Performance}
-The MNIST network accuracy after training on the CPU using Keras is \SI{97.9}{\percent}.
-And the CIFAR10 accuracy after training is \SI{47.9}{\percent}
+The MNIST network test set accuracy after training on the CPU using Keras is \SI{97.9}{\percent}.
+And the CIFAR-10 accuracy after training is \SI{47.9}{\percent}
 The FPGA gets slightly different floating point results due to rounding differences but is matches the accuracy.
 
 \section{Conclusion}\label{sec:conclusion}
@@ -348,24 +372,34 @@ Due to the FPGAs ability to use any numerical format that is required, the curre
 
 \begin{thebibliography}{99}
 
+\bibitem{lecun2010mnist}
+  LeCun, Yann and Cortes, Corinna and Burges, CJ:
+  MNIST handwritten digit database,
+  {\it AT\&T Labs \url{http://yann.lecun.com/exdb/mnist}},
+  Accessed: 2018-07, 2010
+
+\bibitem{krizhevsky2014cifar}
+  Krizhevsky, Alex, Vinod Nair, and Geoffrey Hinton:
+  The CIFAR-10 dataset,
+  {\it \url{http://www.cs.toronto.edu/kriz/cifar.html}},
+  Accessed: 2018-07, 2014
+
 \bibitem{msbrainwave}
   Chung, Eric and Fowers, Jeremy and Ovtcharov, Kalin and Papamichael, Michael and Caulfield, Adrian and Massengill, Todd and Liu, Ming and Lo, Daniel and Alkalay, Shlomi and Haselman, Michael and others:
-  Serving DNNs in Real Time at Datacenter Scale with Project Brainwave:
+  Serving DNNs in Real Time at Datacenter Scale with Project Brainwave,
   {\it IEEE Micro},
-  vol.
-38, number.
-2, pp 8--20, 2018
+  vol. 38, number. 2, pp 8--20, 2018
 
 \bibitem{googletpu}
   Google Blog (online):
   Google Supercharges Machine Learning Tasks with TPU Custom Chip,
-  {\it https://cloudplatform.googleblog.com/2016/05/Google-supercharges-machine-learning-tasks-with-custom-chip.html}
+  {\it \url{https://cloudplatform.googleblog.com/2016/05/Google-supercharges-machine-learning-tasks-with-custom-chip.html}},
   Accessed: 2018-06-25
 
 \bibitem{fujitsudlu}
   Fujitsu:
   Post-K Development and Introducing DLU - Fujitsu,
-  {\it http://www.fujitsu.com/global/Images/post-k-development-and-introducing-dlu.pdf},
+  {\it \url{http://www.fujitsu.com/global/Images/post-k-development-and-introducing-dlu.pdf}},
   2016
 
 \bibitem{knm}
@@ -377,7 +411,7 @@ Due to the FPGAs ability to use any numerical format that is required, the curre
 \bibitem{volta100}
   NVIDIA:
   Artificial Intelligence Architecture,
-  {\it https://www.nvidia.com/en-us/data-center/volta-gpu-architecture/},
+  {\it \url{https://www.nvidia.com/en-us/data-center/volta-gpu-architecture/}},
   Accessed: 2018-06-25
 
 \bibitem{intelflexpoint}
@@ -389,25 +423,20 @@ Due to the FPGAs ability to use any numerical format that is required, the curre
 \bibitem{tpuformat}
   The Next Platform:
   Tearing Apart Google’s TPU 3.0 AI CoProcessor,
-  {\it https://www.nextplatform.com/2018/05/10/tearing-apart-googles-tpu-3-0-ai-coprocessor},
+  {\it \url{https://www.nextplatform.com/2018/05/10/tearing-apart-googles-tpu-3-0-ai-coprocessor}},
   Accessed: 2018-06-25
     
 \bibitem{posits}
   Gustafson, John L and Yonemoto, Isaac T:
   Beating Floating Point at its Own Game: Posit Arithmetic,
   {\it Supercomputing Frontiers and Innovations},
-  vol.
-4, num.
-2, pp 71--86, 2017
+  vol. 4, num. 2, pp 71--86, 2017
 
 \bibitem{softfloat}
   Fousse, Laurent and Hanrot, Guillaume and Lef{\`e}vre, Vincent and P{\'e}lissier, Patrick and Zimmermann, Paul:
   MPFR: A Multiple-Precision Binary Floating-Point Library with Correct Rounding,
   {\it ACM Transactions on Mathematical Software (TOMS)},
-  vol.
-32, num.
-2, pp.
-13, 2007
+  vol. 32, num. 2, pp. 13, 2007
 
 
 \bibitem{langroudi2018deep}
@@ -419,13 +448,13 @@ Due to the FPGAs ability to use any numerical format that is required, the curre
 \bibitem{nervana}
   Intel:
   Intel Nervana Neural Network Processor,
-  {\it https://ai.intel.com/intel-nervana-neural-network-processor/},
+  {\it \url{https://ai.intel.com/intel-nervana-neural-network-processor/}},
   Access: 2018-06
 
 \bibitem{xilinxml}
   Xilinx:
   Xilinx ML Suite,
-  {\it https://www.xilinx.com/applications/megatrends/machine-learning.html},
+  {\it \url{https://www.xilinx.com/applications/megatrends/machine-learning.html}},
   Accessed: 2018-16
 
 \bibitem{krizhevsky2012imagenet}
@@ -450,9 +479,7 @@ Due to the FPGAs ability to use any numerical format that is required, the curre
   Andri, Renzo and Cavigelli, Lukas and Rossi, Davide and Benini, Luca:
   YodaNN: An Architecture for Ultralow Power Binary-Weight CNN Acceleration
   {\it IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems},
-  vol.
-37, num.
-1, pp 48–60, 2018
+  vol. 37, num. 1, pp 48–60, 2018
 
 \bibitem{binaryeye}
   Moons, Bert and Bankman, Daniel and Yang, Lita and Murmann, Boris and Verhelst, Marian:
@@ -493,22 +520,22 @@ Due to the FPGAs ability to use any numerical format that is required, the curre
   2016
 
 \bibitem{simonyan2014very}
-    Simonyan, Karen and Zisserman, Andrew:
-    Very deep convolutional networks for large-scale image recognition,
-    {\it arXiv preprint arXiv:1409.1556},
-    2014
+  Simonyan, Karen and Zisserman, Andrew:
+  Very deep convolutional networks for large-scale image recognition,
+  {\it arXiv preprint arXiv:1409.1556},
+  2014
 
 \bibitem{szegedy2015going}
-    Szegedy, Christian and Liu, Wei and Jia, Yangqing and Sermanet, Pierre and Reed, Scott and Anguelov, Dragomir and Erhan, Dumitru and Vanhoucke, Vincent and Rabinovich, Andrew:
-    Going deeper with convolutions,
-    {\it Proceedings of the IEEE conference on computer vision and pattern recognition},
-    pp 1--9, 2015
+  Szegedy, Christian and Liu, Wei and Jia, Yangqing and Sermanet, Pierre and Reed, Scott and Anguelov, Dragomir and Erhan, Dumitru and Vanhoucke, Vincent and Rabinovich, Andrew:
+  Going deeper with convolutions,
+  {\it Proceedings of the IEEE conference on computer vision and pattern recognition},
+  pp 1--9, 2015
 
 \bibitem{he2016deep}
-    He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian:
-    Deep residual learning for image recognition,
-    {\it Proceedings of the IEEE conference on computer vision and pattern recognition},
-    pp 770--778, 2016
+  He, Kaiming and Zhang, Xiangyu and Ren, Shaoqing and Sun, Jian:
+  Deep residual learning for image recognition,
+  {\it Proceedings of the IEEE conference on computer vision and pattern recognition},
+  pp 770--778, 2016
     
 \end{thebibliography}  
 
