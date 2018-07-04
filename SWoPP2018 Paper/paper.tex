@@ -65,9 +65,7 @@
 
 \begin{document}
 
-\title{Towards Accelerating Deep Neural Network Training on FPGAs Facilitating the Use of Variable Precision}
-
-
+\title{Towards Accelerating Deep Neural Network Training on FPGAs: Facilitating the Use of Variable Precision\\ \Large{(Unrefereed Workshop Manuscript)}}
 \affiliate{TiTech}{Tokyo Institute of Technology, 
 Meguro, Tokyo 152--8550, Japan}
 \affiliate{TUDelft}{Delft University of Technology, Mekelweg 2, 2628 CD Delft, Netherlands}
@@ -82,7 +80,7 @@ The race for larger and deeper neural networks are leading researchers, vendors 
 Among these decisions, reducing the numerical format is thought to be one of prime candidates to increasing performance.
 Unfortunately, modern hardware has limited support for this, and the impact of modifying floating-point formats and its size remains shrouded in mystery.
 To help investigate what the effects of varying the precision during deep-learning training are, first an architecture using reconfigurable hardware needs to be developed.
-Through this work, we seek to accelerate arbitrary precision deep-learning training using Field-Programmable Gate-Arrays by leveraging Intel FPGA SDK for OpenCL. We present our design decision and the future outlook of our framework, and quantitively describe its resource consumption and inferrence performance on modern FPGAs.
+Through this work, we seek to accelerate arbitrary precision deep-learning training using Field-Programmable Gate-Arrays by leveraging the Intel FPGA SDK for OpenCL. We present our design decision and the future outlook of our framework, and quantitively describe its resource consumption and inferrence performance on modern FPGAs.
 %Preliminary results show promise for implementations based on precisions or number formats that currently only have low performing implementations on conventional CPU and GPU hardware.
 \end{abstract}
 
@@ -113,7 +111,7 @@ Furthermore, simulating alternative numerical formats in software are incapable 
 Porting the full software infrastructure stack is possible (and inevitable), but is a non-trivial effort that requires changes to the compiler, standard libraries and (possibly) the Application-Binary-Interface (e.g.\ calling convention).
 
 A better way to explore floating-point representation is to leverage Field-Programmable Gate-Arrays (FPGAs).
-An FPGA is a device consisting of several millions re-programmable look-up tables (LUTs) that together with programmable routers give a very malleable silicon substrate second only in performance to Application-Specific Integrate Circuits (ASICs).
+An FPGA is a device consisting of several millions of re-programmable look-up tables (LUTs) that together with programmable routers give a very malleable silicon substrate second only in performance to Application-Specific Integrate Circuits (ASICs).
 Modern FPGAs can be clocked at several hundreds MHz, and contain enough compute to rival even Graphics-Processing Units (GPUs), making them ideal to study architectural design choices.
 Furthermore, with the recent growth in popularity of High-Level Synthesis (HLS) tools, programming these devices can be as simple as writing C/C++ code, and delegate the software-to-hardware transformation effort to the compiler.
 
@@ -123,28 +121,28 @@ We contribute with the following:
 \item Evaluation and analysis of core computation patterns, including FPGA resource utilization
 \end{itemize}
 
-The remainder of our paper is structure in the following way: \cref{sec:relwork} positions our work against other, similar efforts.
+The remainder of our paper is structure in the following way: \cref{sec:relwork} positions our work against other work, similar efforts.
 \cref{sec:framework} gives a background to machine learning and FPGAs, and describes our proposed architecture.
 \cref{sec:method} overviews our experimental methodology, and is followed by our preliminary results in \cref{sec:result}.
 We conclude in \cref{sec:conclusion}.
 
 \section{Related Work}\label{sec:relwork}
-Field-Programmable Gate-Arrays (FPGAs) have extensively been used to probe and explore various architectural design decision, including those of deep-learning.
-The large majority of existing work limit themselves to inference, primarily due to the simpler design layout (little intermediate data needs storing).
-Levering FPGAs have allowed researchers to decrease the number of bits allocate to the numerical representation, going as far as inferring popular networks such as  AlexNET~\cite{krizhevsky2012imagenet} using as few as binary~\cite{shimoda2017all,umuroglu2017finn} (1-bit) weights.
-Inferring networks that uses few bits to represents weights (called Quantized Neural Networks~\cite{courbariaux2016binarized}) requires subtle yet necessary changes to the training phase~\cite{binaryconnect,courbariaux2016binarized,zhou2016dorefa}.
-Lately, modern deep-learning framework are having support for reduced precision training, some driven by leading FPGA vendors such as Xilinx~\cite{xilinxml}.
+Field-Programmable Gate-Arrays (FPGAs) have extensively been used to probe and explore various architectural design decisions, including those of deep-learning.
+The large majority of existing work limits themselves to inference, primarily due to the simpler design layout (little intermediate data needs storing).
+Levering FPGAs has allowed researchers to decrease the number of bits allocated to the numerical representation, going as far as inferring popular networks such as  AlexNET~\cite{krizhevsky2012imagenet} using as few as single bit~\cite{shimoda2017all,umuroglu2017finn} (binary) weights.
+Inferring networks that use few bits to represents weights (called Quantized Neural Networks~\cite{courbariaux2016binarized}) requires subtle yet necessary changes to the training phase~\cite{binaryconnect,courbariaux2016binarized,zhou2016dorefa}.
+Lately, modern deep-learning frameworks are having support for reduced precision training, some driven by leading FPGA vendors such as Xilinx~\cite{xilinxml}.
 Dicecco et al.~\cite{dicecco2017fpga} are working on a framework similar to ours that trains neural networks using FPGAs while modifying the numerical format.
 Their work primary focus on the IEEE-754 format and convolution layers where-as we aspire to include alternative format such as posits~\cite{posits}.
 Using posits in deep-learning was intended the focus of Langroudi et al.~\cite{langroudi2018deep}’s work; however, they only compared the performance against fixed-point and only \textit{stored} the weights as posit (the computation was still done using IEEE-754).
 
 FPGAs are not unique to vary the numerical precision of deep neural networks, and several ASICs have been produced for quantized neural networks.
-Most of these focus only on inference (for embedded deployment)  for low-power embedded domains; these include YodaNN~\cite{yodann}, BinaryEYE~\cite{binaryeye} and ChipMunk~\cite{chipmunk}; these ASICs were shown to consume up-to two magnitudes low power compared to similar FPGA solutions.
+Most of these focus only on inference (for embedded deployment)  for low-power embedded domains; these include YodaNN~\cite{yodann}, BinaryEYE~\cite{binaryeye} and ChipMunk~\cite{chipmunk}; these ASICs were shown to consume up to two magnitudes lower power compared to similar FPGA solutions.
 
 Commercially most vendors do support some form of reduced precision mode.
 Intel’s Knight’s Mill~\cite{knm} architecture replaces one of the AVX-512 vector units of Knight’s Landing with a Vector Neural Network Instruction (VNNI) unit, capable of performing dot-products in a mixed IEEE-754 16-bit and 32-bit mode.
 A similar process (reduced precision multiplication, full precision accumulation) is also applied in NVIDIA’s Volta-100 line GPUs.
-These mixed-precision units drastically improve the Artificial-Intelligence compute capabilities (AI-FLOPs) of modern systems, trading silicon resource for increased compute with arguable small impact on training performance.
+These mixed-precision units drastically improve the Artificial-Intelligence compute capabilities (AI-FLOPs) of modern systems, trading silicon resources for increased compute with arguably small impact on training performance.
 Vendors also embrace drastically different formats, notably in Intel’s NERVANA~\cite{nervana} (likely where FlexPoint~\cite{intelflexpoint} is used) and Google’s TPU~\cite{tpuformat} (which have more bits in the exponent compared to the mantissa).
 
 
@@ -156,14 +154,14 @@ FPGAs are made up of a reconfigurable fabric.
 The fabric they are made up of consists of vast arrays of switches and other routing hardware to connect all the functional elements, like multipliers, block RAMs and LUTs, in any way possible.
 The LUTs can be used to implement any mathematical function, like addition, multiplication, boolean functions and more.
 This makes them very suitable for the research described in this paper.
-It gives total freedom to design a hardware implementation to explore algorithms in a hardware setting without having to resort to software simulations and the performance limitations that follow from that.
+It gives total freedom to design a hardware implementation to explore algorithms in a hardware setting without having to resort to software simulations and the performance limitations that follow from those.
 
-The usual FPGA work-flow consists of writing in a hardware description language, synthesizing the design and finally place and routing the desig onto the FGPA resources.
-This is a lengthy process and complex designs in hardware description languages are hard to maintain.
+The usual FPGA work-flow consists of writing in a hardware description language, synthesizing the design and finally place and routing the design onto the FGPA resources.
+This is a lengthy process and complex designs written in hardware description languages are hard to maintain.
 In this work we will focus on using the OpenCL interface to the FPGA.
 OpenCL is a framework specified by the Khronos Group\footnote{Specification available at: \url{https://www.khronos.org/opencl/}} in 2009, to work with all kinds of processors, accelerators and other heterogenous compute devices, in recent years the FPGA vendors have made efforts to make it easier to leverage FPGA resources by computer scientists and not only hardware designers.
-So OpenCL is one of the ways to leverage high level synthesis.
-High-level synthesis takes a design specification in a high level language like C or in this case the modified version of C99 that is used for OpenCL kernels and creates an RTL design description for this design automatically after which the normal work-flow is resumed.
+Now OpenCL is one of the ways to leverage high level synthesis.
+High-level synthesis takes a design specification in a high level language like C or in this case the modified version of C99 that is used for OpenCL kernels and creates an RTL design description for this design automatically after which the normal work-flow for synthesis, and place and route is resumed.
 
 \begin{figure}[ht]
   \centering
@@ -172,10 +170,10 @@ High-level synthesis takes a design specification in a high level language like 
 \end{figure}
 
 \subsection{Neural Networks}
-An Artificial Neural Network (ANNs) is a system inspired by the biological nervous system-- a system built around the concepts of \textit{neuron}s as the main computational agents.
+An Artificial Neural Network (ANNs) is a system inspired by the biological nervous system -- a system built around the concepts of \textit{neuron}s as the main computational agents.
 \Cref{fig:ann-example} illustrates an example of a typical “deep” neural network: a network that consists of a input layer, and output layer, and a number of \textit{hidden} layers in-between.
 The number of hidden layers in modern neural networks can be very large: AlexNet (2012)~\cite{krizhevsky2012imagenet} has eight, VGG16 (2014)~\cite{simonyan2014very} has 16 layers, GoogleNet (2014)~\cite{szegedy2015going} has 22 layers, and ResNet (2016)~\cite{he2016deep} has 152 layers.
-The trend seem to favor larger and deeper neural networks.
+The trend seems to favor larger and deeper neural networks.
 The input layer of a neural network (in our example, a classifier) contains the (possibly pre-processed) inputs, such as images (for image recognition), words (in natural language processing), or motifs (in graph processing).
 In our humble example, the input is an image of an apple, where each pixel has an all-to-all connection to the hidden layer-- a so-called \textit{dense} layer. The dense-layer (or fully-connected layer) is the most basic of all layers, and nearly all (e.g.\ convolution) layers are derived from it.
 Each layers consists of a number of \textit{neurons} – the main compute agent of the network.
