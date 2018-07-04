@@ -61,7 +61,7 @@
 \makeatother%
 
 \usepackage[hidelinks]{hyperref}
-\usepackage[nameinlink,noabbrev,capitalise]{cleveref}
+\usepackage[nameinlink,capitalise]{cleveref}
 
 \begin{document}
 
@@ -97,15 +97,15 @@ Through this work, we seek to accelerate arbitrary precision deep-learning train
 The present paper describes our efforts toward a customized and generalized framework for design-space exploration using alternative numerical floating-point formats through FPGAs.
 
 The recent explosion in artificial intelligence – in particular that of deep neural networks based on back-propagation – has triggered a storm in the introduction and creation of specialized compute devices.
-Commercial platforms such as Microsoft’s BrainWave~\cite{msbrainwave}, Google’s TPUs~\cite{googletpu}, and Fujitsu’s DLU~\cite{fujitsudlu} are all examples of specialized circuitry dedicated to low-power, high-performance Deep-Learning (DL) training and/or inference.
-Meanwhile, existing general-purpose manufacturers are empowering their architecture with custom floating-point units that trade precision for performance, such as Intel’s Knights-Mill~\cite{knm} and NVIDIA’s Volta-100~\cite{volta100}.
-It is clear that Artificial Intelligence and Deep-Learning will have a prioritized presence in modern architecture -- today and in the near future.
+Commercial platforms such as Microsoft’s BrainWave~\cite{msbrainwave}, Google’s TPUs~\cite{googletpu}, and Fujitsu’s DLU~\cite{fujitsudlu} are all examples of specialized circuitry dedicated to low-power, high performance deep-learning (DL) training and/or inference.
+Meanwhile, existing general-purpose manufacturers are empowering their architecture with custom floating point units that trade precision for performance, such as Intel’s Knights-Mill~\cite{knm} and NVIDIA’s Volta-100~\cite{volta100}.
+It is clear that artificial intelligence and deep-learning will have a prioritized presence in modern architecture -- today and in the near future.
 
 In the pursuit for faster and more energy efficient deep-learning architecture, there is a need to critically review long-standing architectural design decisions taken by computer architects decades ago.
 One of the oldest design decision concerns the representation of real-valued numbers, otherwise known as the floating-point representation.
 The IEEE-754 floating-point representation is one of the few relics that remain unchanged in computing today.
 Reducing the size of the floating-point representation can have dramatic (and positive) impacts on the performance: more compute per unit silicon, more compute per unit bandwidth, and lower power consumption.
-Several alternatives to the IEEE-754 format are indeed emerging, such as Microsoft’s Deep-Learning format~\cite{msbrainwave}, Intel’s FlexPoint~\cite{intelflexpoint}, Google’s custom TPU format~\cite{tpuformat}, and Posits~\cite{posits}.
+Several alternatives to the IEEE-754 format are indeed emerging, such as Microsoft’s deep-learning format~\cite{msbrainwave}, Intel’s FlexPoint~\cite{intelflexpoint}, Google’s custom TPU format~\cite{tpuformat}, and Posits~\cite{posits}.
 
 However, exploring the space around IEEE-754 floating-point representations and its alternatives pose a significant engineering problem: hardware and software infrastructure is to tightly coupled to the IEEE-754 standard that changing any part of it incurs a high engineering overhead.
 One alternative is to simulate alternative floating-point representations in software, for example using soft-float or MPFR libraries~\cite{softfloat}, but the resulting performance is often several magnitudes lower than hardware implementations, limiting the size of the study conducted.
@@ -115,7 +115,7 @@ Porting the full software infrastructure stack is possible (and inevitable), but
 A better way to explore floating-point representation is to leverage Field-Programmable Gate-Arrays (FPGAs).
 An FPGA is a device consisting of several millions of re-programmable look-up tables (LUTs) that together with programmable routers give a very malleable silicon substrate second only in performance to Application-Specific Integrate Circuits (ASICs).
 Modern FPGAs can be clocked at several hundreds MHz, and contain enough compute to rival even Graphics-Processing Units (GPUs), making them ideal to study architectural design choices.
-Furthermore, with the recent growth in popularity of High-Level Synthesis (HLS) tools, programming these devices can be as simple as writing C/C++ code, and delegate the software-to-hardware transformation effort to the compiler.
+Furthermore, with the recent growth in popularity of High-Level Synthesis (HLS) tools, programming these devices can be as simple as writing C/C++ code, and delegate the software to hardware transformation effort to the compiler.
 
 We contribute with the following:
 \begin{itemize}
@@ -179,11 +179,11 @@ The trend seems to favor larger and deeper neural networks.
 The input layer of a neural network (in our example, a classifier) contains the (possibly pre-processed) inputs, such as images (for image recognition), words (in natural language processing), or motifs (in graph processing).
 In our humble example, the input is an image of an apple, where each pixel has an all-to-all connection to the hidden layer-- a so-called \textit{dense} layer. The dense-layer (or fully-connected layer) is the most basic of all layers, and nearly all (e.g.\ convolution) layers are derived from it.
 Each layers consists of a number of \textit{neurons} – the main compute agent of the network.
-Each edge that connect to a particular neuron is called a \textit{synapse}, and comes with a \textit{weight} (\(w_{i,j}\)) in the figure, where \(i\) is the index of the neuron).
-The neuron integrates the weights (\cref{fig:ann-example}:b) of all input synapses, adds a local bias, and applies a activation function to compute the output of the neuron. The activation function varies between networks, but commonly used activation functions include: the sigmoid (\(f(x) = \frac{1}{1+e^{-x}}\)), the rectifier (ReLu, \(f(x) = max(0,x)\)), or hyperbolic tangent (\(f(x) = tanh(x)\)).
+Each edge that connects to a particular neuron is called a \textit{synapse}, and comes with a \textit{weight} (\(w_{i,j}\)) in the figure, where \(i\) is the index of the neuron.
+The neuron integrates the weights (\cref{fig:ann-example}:b) of all input synapses, adds a local bias, and applies an activation function to compute the output of the neuron. The activation function varies between networks, but commonly used activation functions include: the sigmoid (\(f(x) = \frac{1}{1+e^{-x}}\)), the rectifier (ReLu, \(f(x) = max(0,x)\)), or hyperbolic tangent (\(f(x) = tanh(x)\)).
 In \cref{fig:ann-example}:b (and commonly in image processing network), the simple and compute-\textit{in}expensive ReLu activation function is used in the hidden-layers of the network. The final layer of our classifier neural network is an output layer, \cref{fig:ann-example}:c. In the output layer, the activation function is often a \textit{softmax} (\cref{fig:ann-example}:d), which scales all outputs such that their sum equals one.
 
-Inferring (predicting) using a deep neural network is done by connecting the input to what is to be predicted, and sequentially activating each layer --from the front to the back of the network-- and propagating the output of each layer into the next.
+Inferring (predicting) using a deep neural network is done by connecting the input to what is to be predicted, and sequentially activating each layer -- from the front to the back of the network -- and propagating the output of each layer into the next.
 This effort is called \textit{forward propagation}. Training the network is done in a similar but reverse fashion -- errors are calculated at the output and propagated backwards.
 At this point in time, our framework focuses on forward propagation.
 
@@ -200,20 +200,21 @@ We have chosen to rely on Python as the high-level frontend for our framework.
 It is through Python that a user creates networks, selects inputs, and decides what data formats to use.
 Once a particular configuration is selected, our framework generates data-type oblivious training and inference code that targets Intel's OpenCL SDK for FPGAs.
 By data-type oblivious we mean that all operations associated with any particular data-type representation remain unresolved at the point of creation, as they will not depend on any of the native data-types or functionality of the OpenCL language.
-Instead, our Python framework invokes a Data-type selector, which automatically generates a low-level hardware description language (HDL) library that contain commonly used operators for the selected data-type.
+Instead, our Python framework invokes a data-type selector, which automatically generates a low-level hardware description language (HDL) library that contains commonly used operators for the selected data-type.
 Once the Register-Transfer Level (RTL) library has been generated, it is merged with the data-type oblivious OpenCL template to yield the final description, which now can be synthesized using EDA tools and used.
 Invisible to the user, our host runtime system handles all communication, invocation and control over the FPGA from the host side.
 
-The present paper focuses on the IEEE-754 part of inference, where training and alternative data-types are on-going and future work. Althought we do have a posit~\cite{podobasposit} generator ready to be used, it has yet to be integrated into our flow.
+The present paper focuses on the IEEE-754 part of inference, where training and alternative data-types are on-going and future work.
+Although we do have a posit~\cite{podobasposit} generator ready to be used, it has yet to be integrated into our flow.
 
 \subsubsection{Design overview}
-\Cref{fig:block-diagram} shows a overview of the system.
+\Cref{fig:block-diagram} shows an overview of the system.
 The backwards kernels are a work in progress, so for now we leverage external frameworks for training.
 The backwards kernels are the kernels that calculate the error and back propagate the error while updating the weights and biases in the network used during training.
-During inference the host code, written in Python, does one forward kernel call for every layer.
+The host code -- written in Python -- does one forward kernel call for every layer during inference.
 Finally it does a final softmax kernel call to get the final prediction.
 For performance this could obviously be done on the host, given the limited size of most final layers, but performance is not the main goal of this effort.
-The main goal is to simplify changing the numerical format, and thus all the calculations need to be done in that format, and an FPGA is better at accommodating that without a huge performance impact. % TODO add citation for "HUGE"
+The main goal is to simplify changing the numerical format, and thus all the calculations need to be done in that format, and an FPGA is better at accommodating this without a huge performance impact. % TODO add citation for "HUGE"
 
 \begin{figure*}[p]
   \centering
@@ -233,22 +234,21 @@ The main goal is to simplify changing the numerical format, and thus all the cal
 \end{figure*}
 
 \subsubsection{Design details}
-All weight matrices are transposed in memory, this to optimized the memory access pattern of the matrix-matrix multiplication.
+All weight matrices are transposed in memory, this to optimize the memory access pattern of the matrix-matrix multiplication.
 The main inference is performed using an blocking implementation of the matrix multiplication.
 First a block is fetched from the matrices containing the activations and weights and is placed in the block RAM on the FPGA.
 The computation result is also stored on the block RAM, before a routine writes it back to global memory.
 The block RAM has a much lower latency than the global memory.
-This speeds up throughput by a large margin.
+This increases the throughput by a significant margin, almost 3\(\times\) in a naive implementation.
 Block RAM is equivalent to the shared or local memory of contemporary GPUs.
 
 The OpenCL SDK from Intel used for this design tries to pipeline loops in single work item kernels, as opposed to NDRange kernels (that are more truthful to the SIMT paradigm).
 To get maximum performance the aim is to get an initiation interval of one.
 That is to say that a new loop iteration is scheduled every clock cycle.
-To get this to work on the inner most loop, one that is essentially a reduction.
-An array is used to store all output in separate locations, which enables the loop to be fully unrolled.
-For the loops surrounding the inner most loop, serial dependencies are to be avoided whenever possible, so different loop iterations are fully data-independent.
+To get this to work on the inner most loop -- one that is essentially a reduction -- an array is used to store the output of every iteration in separate locations, which enables the loop to be fully unrolled.
+For the loops surrounding the inner most loop, serial data-dependencies are to be avoided whenever possible, so different loop iterations are fully data-independent.
 For the outermost loop that processes one block this behavior is not possible, since the output block is written to multiple times.
-Multiple blocks can theoretically be processed on the FPGA should space allow for it.
+Multiple different blocks can theoretically be processed on the FPGA should space allow for it.
 Future revisions of this framework will also include a training phase, and we thus postponed further parallelization efforts until the kernel is complete.
 
 \subsubsection{Design decisions}
@@ -258,14 +258,15 @@ In early stages of development it sped up the kernel performance by a factor of 
 During training, using stochastic gradient descent, this can be a problem though, since the weight matrix should now be transposed back for the most efficient memory access patterns.
 But since the arithmetic density of the training process is higher, the effect might be slightly less pronounced.
 Another decision was to execute the outermost loop, the one that loops through all the layers, to the host.
-This loop cannot be pipelined due to a serial data-dependency, so it makes more sense execute this loop on the host CPU.
+This loop cannot be pipelined due to a serial data-dependency, so it makes more sense to execute this loop on the host CPU.
 This saves space on the FPGA and simplifies the hardware design.
 
 \section{Methodology}\label{sec:method}
 \subsection{Experimental Platform}
 The software versions and hardware configuration are shown in respectively \cref{tab:software-versions} and \cref{tab:test-hardware}.
-All kernels were compiled with ``\texttt{-O3 -fp-relaxed}''.
-``\texttt{-fp-relaxed}'' gives the compiler some more freedom with the order of operations, this gives about a \SIrange{10}{15}{\percent} performance benefit.% without changing the numerical output.
+All kernels were compiled with the flags ``\texttt{-O3 -fp-relaxed}''.
+``-O3'' is an optimization flag, configuring the compiler to enable resource-driven optimizations. % TODO verify
+The ``\texttt{-fp-relaxed}'' flag gives the compiler some more freedom with the order of operations using a balanced tree hardware implementation, this gives about a \SIrange{10}{15}{\percent} performance benefit.% without changing the numerical output.
 \begin{table}[h]
   \centering
   \caption{Used software versions}\label{tab:software-versions}
@@ -297,8 +298,8 @@ All kernels were compiled with ``\texttt{-O3 -fp-relaxed}''.
 
 \subsection{Test Networks and Inputs}
 
-The used example networks are multi-layer perceptron (MLP).
-This means that all layers are an array of neurons and every neuron is connected to every neuron in the next layer.
+The used example networks are multi-layer perceptrons (MLPs).
+This means that all layers are arrays of neurons and every neuron is connected to every neuron in the next layer.
 These layers are often called ``Dense'' layers.
 The first data set used was MNIST~\cite{lecun2010mnist}, MNIST is a collection of 28\(\times\)28 gray scale images of hand written arabic numerals.
 So the data set provides \num{784} inputs.
@@ -306,7 +307,7 @@ The structure of the sample MNIST network is shown in \cref{fig:mnist-network}.
 In total a three layer network plus the input layer, or three sets of weight matrices and bias vectors.
 The data set was trained using the first \num{60000} images from the MNIST data set.
 The last \num{10000} images are used as the test data set.\\
-The second data set used was CIFAR-10~\cite{krizhevsky2014cifar}, so \num{3072} input features.
+The second data set used was CIFAR-10~\cite{krizhevsky2014cifar}, CIFAR-10 is a collection of 32\(\times\)32 color images divided into 10 classes, providing \num{3072} inputs.
 The structure of the sample CIFAR-10 network is shown in \cref{fig:cifar10-network}.\\
 The data set was trained using the first \num{50000} images from the data set.
 The last \num{10000} images were used as the test data set.
@@ -315,7 +316,7 @@ We implemented the CPU code based on NumPy's array.dot function.
 
 \section{Results}\label{sec:result}
 The host (NumPy based) code benchmarked at \num{60} GFLOPS for straight-forward inference of the first network and about \num{160} GFLOPS for the second network.
-A first naive implementation on the FPGA clocked about \num{2.5} GFLOPS for this problem size.
+A first naive implementation on the FPGA clocked in at about \num{2.5} GFLOPS for this problem size.
 Transposing the weight matrix sped up the kernel to around \num{7.5} GFLOPS.\@
 The results for the different final FPGA kernels are shown in \cref{tab:kernel-performance}.
 
@@ -332,14 +333,14 @@ The results for the different final FPGA kernels are shown in \cref{tab:kernel-p
   \end{tabular}
 \end{table}
 
-The performance is memory-bound for these kernels. However, given our experience with alterantive numerical formats (most noticable posits~\cite{podobasposit}), we do not expect performance to be degraded when changing numerical format.
+The performance is memory-bound for these kernels. However, given our experience with alternative numerical formats (most notably posits~\cite{podobasposit}), we do not expect performance to be degraded when changing numerical format.
 
 \subsection{FPGA Resource Utilization}
 The kernel resource utilization is shown in \cref{tab:fpga-util}.
 The main limiting factor is the available block RAM.
 To stop the calculation of extra padding lines in the matrices, the block size should be a multiple of most of the layer sizes.
 Larger block sizes would exhaust the block RAM on the used FPGA device.
-The next logical size up from \num{64} would be \num{84} (\num{3}\(\times\)\num{28}), this would use to much of the block RAM already.
+The next logical size up from \num{64} would be \num{84} (\num{3}\(\times\)\num{28}) would use to much of the block RAM already.
 This is because there are three block buffers and the relationship between block size and used block RAM is square.
 
 \begin{table}[h]
@@ -357,11 +358,15 @@ This is because there are three block buffers and the relationship between block
 
 \subsection{Inferrence Performance}
 The MNIST network test set accuracy after training on the CPU using Keras is \SI{97.9}{\percent}.
-And the CIFAR-10 accuracy after training is \SI{47.9}{\percent}
+And the CIFAR-10 accuracy after training is \SI{47.9}{\percent}.
 The FPGA gets slightly different floating point results due to rounding differences but is matches the accuracy.
 
 \section{Conclusion}\label{sec:conclusion}
-We have introduced and described our efforts to create a general-purpose Deep-Learning framework for design-space exploration of numerical formats. While still in the early stages, we have focused on generality. We have shown interoperability with Keras, where we can train weights offline and import them into our framework with little effort. We evaluated the performance and resource consumption of our design on the FPGAs, and made sure that the inferred accuracy is correct. We are currently working on implementing the training phase, as well as the choice of numerical format to be used in both the inference and training part of our framework.
+We have introduced and described our efforts to create a general-purpose deep-learning framework for design space exploration of numerical formats.
+While still in the early stages, we have focused on generality.
+We have shown interoperability with Keras, where we can train weights offline and import them into our framework with little effort.
+We evaluated the performance and resource consumption of our design on the FPGAs, and made sure that the inferred accuracy is correct.
+We are currently working on implementing the training phase, as well as the choice of numerical format to be used in both the inference and training part of our framework.
 
 
 \section{Acknowledgment}\label{sec:acknowledgment}
