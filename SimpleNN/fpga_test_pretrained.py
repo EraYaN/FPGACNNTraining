@@ -84,14 +84,14 @@ class FPGATest:
 
         self.kForward = program.forward
         self.kForwardSoftMax = program.forward_softmax
-        self.kBackWardFirstDelta = program.backward_first_delta
-        self.kBackward = program.backward
+        # self.kBackWardFirstDelta = program.backward_first_delta
+        # self.kBackward = program.backward
 
         self.kForward.set_scalar_arg_dtypes([None, None, None, None, np.int32, np.int32, np.int32, np.int32])
         self.kForwardSoftMax.set_scalar_arg_dtypes([None, np.int32, np.int32])
-        self.kBackWardFirstDelta.set_scalar_arg_dtypes([None, None, None, np.int32, np.int32])
-        self.kBackward.set_scalar_arg_dtypes(
-           [None, None, None, None, NN_T, np.int32, np.int32, np.int32])
+        # self.kBackWardFirstDelta.set_scalar_arg_dtypes([None, None, None, np.int32, np.int32])
+        # self.kBackward.set_scalar_arg_dtypes(
+        #    [None, None, None, None, NN_T, NN_T, np.int32, np.int32, np.int32])
 
         self.queue = cl.CommandQueue(self.ctx)
 
@@ -149,23 +149,17 @@ class FPGATest:
         return e_act / np.sum(e_act, axis=1, keepdims=True)
 
     def cpu_first_delta(self, probs, ground_truth):
-        deriv_relu = probs
-        deriv_relu[deriv_relu < 0] = 0
-        return (probs - ground_truth) * deriv_relu
+        return probs - ground_truth
 
-    def cpu_backward(self, act, weights, bias, delta_next, learn_rate):
-
-        dW = act.T.dot(delta_next)
-
+    def cpu_backward(self, act_prev, weights, bias, delta_next, learn_rate, regulation_strength, minibatch_size):
+        dW = act_prev.T.dot(delta_next) / minibatch_size  # or rows_in or rows_out
         db = np.sum(delta_next, axis=0, keepdims=True)
+        delta = delta_next.dot(weights.T) * (NN_T(1) - np.power(act_prev, 2))
 
-        delta = delta_next.dot(weights.T)
+        dW += regulation_strength * weights
 
-        # apply relu derive product
-        delta[act < 0] = 0
-
-        weights -= learn_rate * dW
-        bias -= learn_rate * db
+        weights += -learn_rate * dW
+        bias += -learn_rate * db
         return weights, bias, delta
 
     def fpga_function(self, benchmark=False):
@@ -336,7 +330,6 @@ if __name__ == "__main__":
     fpga_class.create_buffers()
     fpga_class.send_buffers_to_device()
     batches = int(fpga_class.x_test.shape[0] / fpga_class.minibatch_size)
-    batches = 1
     print("Running {} batches...".format(batches))
     fpga_time = 0.0
     cpu_time = 0.0

@@ -3,15 +3,16 @@ import sklearn
 import sklearn.datasets
 import matplotlib.pyplot as plt
 
-num_inputs = 2
+num_inputs = 64
 num_hidden = 32
 num_output = 10
-num_passes = 200
+num_passes = 100
 num_examples = 32000
-num_testexamples = 2500
+num_testexamples = 1000
 num_batches = 1000
 num_batchsize = int(num_examples / num_batches)
-layers = 1 + 2
+hidden_layers = 2
+layers = 1 + hidden_layers
 n_l = [num_inputs] + [num_hidden] * (layers - 1) + [num_output]
 n = tuple(n_l)
 
@@ -33,23 +34,17 @@ def plot_decision_boundary(X, y, pred_func):
     plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
     plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
 
-
-# Helper function to evaluate the total loss on the dataset
-def calculate_loss(X, y, W, B):
+def count_accuracy(X, y, W, B):
     a = {}
     z = {}
     a[0] = X
     forward(a, W, B, z)
     probs = a[layers]
-    # Calculating the loss
-    corect_logprobs = -np.log(probs[range(y.shape[0]), y])
-    data_loss = np.sum(corect_logprobs)
-    # Add regulatization term to loss (optional)
-    sum = 0
-    for i in range(1, layers + 1):
-        sum += np.sum(np.square(W[i]))
-    data_loss += regulation_strength / 2 * sum
-    return 1. / num_examples * data_loss
+
+    prediction_cpu = np.argmax(probs, axis=1)
+
+    return np.sum(prediction_cpu == y) / y.shape[0]
+    #wrong_pred_cpu = np.sum(prediction_cpu != y)
 
 def make_data(num):
     #mnist = fetch_mldata('MNIST original', data_home=custom_data_home)
@@ -65,33 +60,33 @@ def main_func():
     b = {}
     a = {}
     z = {}
-    for i in range(1, layers + 1):
-        w[i] = np.random.rand(n[i - 1], n[i]) / np.sqrt(n[i - 1])
-        b[i] = np.zeros((1, n[i]))
+    for i in range(0, layers):
+        w[i] = np.random.rand(n[i], n[i+1]) / np.sqrt(n[i])
+        b[i] = np.zeros((1, n[i+1]))
 
     train(X, y, a, w, b, z, True)
 
-    print("Plotting results...")
-    plot_decision_boundary(X, y, lambda x: decision(predict(x, w, b)))
-    plt.title("Decision Boundary for hidden layer size {}".format(num_hidden))
+    # print("Plotting results...")
+    # plot_decision_boundary(X, y, lambda x: decision(predict(x, w, b)))
+    # plt.title("Decision Boundary for hidden layer size {}".format(num_hidden))
 
     print("Running tests...")
     X, y = make_data(num_testexamples)
-    test_loss = calculate_loss(X, y, w, b)
-    print("Test loss: {0:.2f}".format(test_loss/num_testexamples*1e6))
+    test_acc = count_accuracy(X, y, w, b)
+    print("Test accuracy: {0:.2f}".format(test_acc))
 
-    print("Individual Tests...")
-    samples, y_indv = make_data(5)
+    # print("Individual Tests...")
+    # samples, y_indv = make_data(5)
+    #
+    # for i in range(samples.shape[0]):
+    #     sample = samples[i,:]
+    #     final_prob = test(sample, w, b)
+    #     final = decision(final_prob)
+    #     confidence = final_prob[0][final[0]]
+    #     plt.scatter(sample[0], sample[1], c='black')
+    #     print("Result for {0} => {1} with {2:.1%} confidence. Should be {4}".format(sample, final, confidence, final_prob, y_indv[i]))
 
-    for i in range(samples.shape[0]):
-        sample = samples[i,:]
-        final_prob = test(sample, w, b)
-        final = decision(final_prob)
-        confidence = final_prob[0][final[0]]
-        plt.scatter(sample[0], sample[1], c='black')
-        print("Result for {0} => {1} with {2:.1%} confidence. Should be {4}".format(sample, final, confidence, final_prob, y_indv[i]))
-
-    plt.show()
+    # plt.show()
 
 
 def test(sample, W, B):
@@ -117,43 +112,65 @@ def decision(result):
 
 
 def forward(A, W, B, Z):
-    for i in range(1, layers + 1):
+    for i in range(0, layers):
         # print("Shape of W[{0}]: {1}".format(i,W[i].shape))
         # print("Shape of b[{0}]: {1}".format(i, B[i].shape))
         # print("Shape of A[{0}]: {1}".format(i-1, A[i-1].shape))
-        Z[i] = infer_layer(A[i - 1], W[i], B[i])
-        A[i] = activate(Z[i], i)
+        Z[i+1] = infer_layer(A[i], W[i], B[i])
+        A[i+1] = activate(Z[i+1], i)
 
 
 def backward(A, W, B, probs, y):
     dW = {}
     db = {}
-    delta = {layers + 1: probs}
-    delta[layers + 1][range(num_batchsize), y] -= 1
-    for i in range(layers, 0, -1):
+    delta = {layers: probs}
+    delta[layers][range(num_batchsize), y] -= 1
+    # print("W: ",W)
+    # print("A: ",A)
+    # print("B: ",B)
+    # print("delta: ",delta)
+    for i in range(layers-1, 0, -1):
+        # print("Layer {0} out of {1}\n".format(i+1,layers))
+        # print("Shape of W[{0}]: {1}".format(i, W[i].shape))
+        # print("Shape of b[{0}]: {1}".format(i, B[i].shape))
+        # print("Shape of A[{0}]: {1}".format(i, A[i].shape))
+
+        dW[i] = A[i].T.dot(delta[i+1])
+        #
+        db[i] = np.sum(delta[i+1], axis=0, keepdims=True)
+        #
+        delta[i] = delta[i+1].dot(W[i].T) * np.clip(A[i], 0, np.Inf)
+        #
+        # print(delta[i].shape, A[i].shape)
+        # # apply relu derive product
+        # #delta[i][A[i] < 0] = 0
+        #
+        W[i] -= learn_rate * dW[i]
+        B[i] -= learn_rate * db[i]
+
         # print("Shape of W[{0}]: {1}".format(i,W[i].shape))
         # print("Shape of b[{0}]: {1}".format(i, B[i].shape))
         # print("Shape of A[{0}]: {1}".format(i-1, A[i-1].shape))
-        dW[i] = (A[i - 1].T).dot(delta[i + 1]) / A[i - 1].shape[0]
+        #dW[i] = (A[i - 1].T).dot(delta[i + 1]) / A[i - 1].shape[0]
         #print("Delta\n")
         # print(delta[i+1])
-        db[i] = np.sum(delta[i + 1], axis=0, keepdims=True)
+        #db[i] = np.sum(delta[i + 1], axis=0, keepdims=True)
         # print(db[i])
         # print(delta[i-1])
         # print(W[i].T)
         #print((delta[i + 1].dot(W[i].T)))
         #print((1 - np.power(A[i - 1], 2)))
-        delta[i] = delta[i + 1].dot(W[i].T) * (1 - np.power(A[i - 1], 2))
+        #delta[i] = delta[i + 1].dot(W[i].T) * (1 - np.power(A[i - 1], 2))
         #print(delta[i])
         # print(delta[i])
         # exit(0)
 
-    for i in range(layers, 0, -1):
-        dW[i] += regulation_strength * W[i]
-
-    for i in range(1, layers + 1):
-        W[i] += -learn_rate * dW[i]
-        B[i] += -learn_rate * db[i]
+    # for i in range(layers, 0, -1):
+    #     dW[i] += regulation_strength * W[i]
+    #
+    # for i in range(1, layers + 1):
+    #     W[i] += -learn_rate * dW[i]
+    #     B[i] += -learn_rate * db[i]
 
 
 def train(X, y, A, W, B, Z, print_loss=False):
@@ -178,10 +195,10 @@ def train(X, y, A, W, B, Z, print_loss=False):
             # Optionally print the loss.
             # This is expensive because it uses the whole dataset, so we don't want to do it too often.
             if print_loss and (i * num_batches + batch) % 1000 == 0:
-                print("Loss after iteration {0}, batch {1}: {2:.2f}".format(i, batch, calculate_loss(X, y, W, B)/num_examples*1e6))
+                print("Accuracy after iteration {0}, batch {1}: {2:.2f}".format(i, batch, count_accuracy(X, y, W, B)))
 
     if print_loss:
-        print("Loss after last iteration ({0}): {1:.2f}".format(num_passes, calculate_loss(X, y, W, B)/num_examples*1e6))
+        print("Accuracy after last iteration ({0}): {1:.2f}".format(num_passes, count_accuracy(X, y, W, B)))
 
 
 def infer_layer(X, W, B):

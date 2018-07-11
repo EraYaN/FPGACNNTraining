@@ -202,31 +202,35 @@ __kernel void forward_softmax(global nn_t *restrict activations_out, int minibat
     }
 }
 
-// __kernel void backward_first_delta(global nn_t *restrict activations_out, global nn_t *restrict ground_truth, global nn_t *restrict delta, int minibatch_size, int rows_out){
-//     for (int i = 0; i < minibatch_size; i++) {
-//         int mi = rows_out * i;
-//         for (int j = 0; j < rows_out; j++) {
-//             delta[mi + j] = activations_out[mi+j] - ground_truth[mi+j];
-//         }
-//     }
-// }
+__kernel void backward_first_delta(global nn_t *restrict activations_out, global nn_t *restrict ground_truth, global nn_t *restrict delta, int minibatch_size, int rows_out){
+    for (int i = 0; i < minibatch_size; i++) {
+        int mi = rows_out * i;
+        for (int j = 0; j < rows_out; j++) {
+            delta[mi + j] = activations_out[mi+j] - ground_truth[mi+j];
+        }
+    }
+}
 
-// __kernel void backward(global nn_t *restrict activations_prev, global nn_t *restrict weights, global nn_t *restrict bias, global nn_t *restrict delta_next, nn_t learn_rate, nn_t regulation_strength, int minibatch_size, int rows_in, int rows_out){
-//     //nn_t dW; //Transposed result, because weights is transposed.
-//     //nn_t db;
-//     /*nn_t activations_prev_sq[minibatch_size*rows_in]; //rows_in is the length of the previous layer
+__kernel void backward(global nn_t *restrict activations, global nn_t *restrict weights, global nn_t *restrict bias, global nn_t *restrict delta_next, nn_t learn_rate, int minibatch_size, int rows_in, int rows_out){
+    nn_t dW[rows_out*rows_in];
+    //nn_t db[rows_out];
+    //nn_t activations_prev_sq[minibatch_size*rows_in]; //rows_in is the length of the previous layer
 
-//     for (int i = 0; i < minibatch_size; i++) {
-//         int mi = rows_in * i;
-//         for (int j = 0; j < rows_in; j++) {
-//             activations_prev_sq[mi + j] = 1 - activations_prev[mi+j]*activations_prev[mi+j];
-//         }
-//     }*/
+    for (int i = 0; i < minibatch_size; i++) {
+        int mi = rows_out * i;
+        for (int j = 0; j < rows_out; j++) {
+            db[mi + j] = 1 - activations_prev[mi+j]*activations_prev[mi+j];
+        }
+        db[i]
+    }
 
-//     /*for (int i = 0; i < minibatch_size; i++) {
-//         int mi = rows_out * i;
-//         for (int j = 0; j < rows_out; j++) {
-//             delta[mi + j] = activations_out[mi+j] - ground_truth[mi+j];
-//         }
-//     }*/
-// }
+    //Process Bias
+    for (int i = 0; i < rows_out; i++) {
+        int mi = minibatch_size * i;
+        nn_t reduction_var = 0;
+        for (int j = 0; j < minibatch_size; j++) {
+            reduction_var += delta_next[mi+j];
+        }
+        bias[i] -= learn_rate * reduction_var;
+    }
+}
