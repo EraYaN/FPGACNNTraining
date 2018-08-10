@@ -20,7 +20,7 @@ class CPUEngine(BaseEngine):
         # print(act)
         # print(np.max(act, axis=1, keepdims=True))
         e_act = np.exp(act - np.max(act, axis=1, keepdims=True))
-        #print("softmax", np.divide(e_act, np.sum(e_act, axis=1, keepdims=True)), "e_act", e_act, "npsum e_act",
+        # print("softmax", np.divide(e_act, np.sum(e_act, axis=1, keepdims=True)), "e_act", e_act, "npsum e_act",
         #      np.sum(e_act, axis=1, keepdims=True))
         return np.divide(e_act, np.sum(e_act, axis=1, keepdims=True))
 
@@ -35,9 +35,9 @@ class CPUEngine(BaseEngine):
 
         delta = delta_next.dot(weights.T)
 
-        print("shapes:",act.shape,delta_next.shape,dW.shape,weights.shape)
+        print("shapes:", act.shape, delta_next.shape, dW.shape, weights.shape)
 
-        if delta.shape == (5,4):
+        if delta.shape == (5, 4):
             print("delta", delta)
             print("delta_NEXT", delta_next)
         # apply relu derive product
@@ -60,11 +60,12 @@ class CPUEngine(BaseEngine):
             if is_last_layer:
                 self.delta[layer] = self.first_delta(self.act[layer], self.ground_truth)
             else:
-                self.weights[layer], self.bias[layer], self.delta[layer], self.dW[layer] = self.backward(self.act[layer],
-                                                                                         self.weights[layer],
-                                                                                         self.bias[layer],
-                                                                                         self.delta[layer + 1],
-                                                                                         self.learn_rate)
+                self.weights[layer], self.bias[layer], self.delta[layer], self.dW[layer] = self.backward(
+                    self.act[layer],
+                    self.weights[layer],
+                    self.bias[layer],
+                    self.delta[layer + 1],
+                    self.learn_rate)
 
     def fw_function(self, benchmark=False):
         for layer in range(0, self.layers):

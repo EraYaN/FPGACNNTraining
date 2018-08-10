@@ -26,8 +26,8 @@ class FPGATest:
     LAYER_FILENAME = "layer_cifar_{0}.p"
     minibatch_size = 10000
 
-    #layer_height = [28 * 28, 512, 512, 10] # MNIST
-    layer_height = [32 * 32 * 3, 1024, 512, 512, 10] # CIFAR-10
+    # layer_height = [28 * 28, 512, 512, 10] # MNIST
+    layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
 
     learn_rate = 0.005
     regulation_strength = 0.002
@@ -49,7 +49,7 @@ class FPGATest:
             print("Bad network config.")
             exit()
 
-        print("Running with {} hidden layers and {} layers total.".format(self.hidden_layers,self.layers))
+        print("Running with {} hidden layers and {} layers total.".format(self.hidden_layers, self.layers))
 
         print("OpenCL Version v{}".format(".".join([str(i) for i in cl.get_cl_header_version()])))
         print("Finding platform....")
@@ -166,24 +166,26 @@ class FPGATest:
         for layer in range(0, self.layers):
             rows_in = self.layer_height[layer]
             rows_out = self.layer_height[layer + 1]
-            is_last_layer = layer+1 == self.layers
+            is_last_layer = layer + 1 == self.layers
 
-            print("Running layer {} ({}->{}) kernel, with relu: {}".format(layer,rows_in,rows_out, 1 if not is_last_layer else 0))
-            self.kForward.set_args(self.act_buffers[layer], self.weights_buffers[layer], self.bias_buffers[layer], self.act_buffers[layer+1],
+            print("Running layer {} ({}->{}) kernel, with relu: {}".format(layer, rows_in, rows_out,
+                                                                           1 if not is_last_layer else 0))
+            self.kForward.set_args(self.act_buffers[layer], self.weights_buffers[layer], self.bias_buffers[layer],
+                                   self.act_buffers[layer + 1],
                                    self.minibatch_size, rows_in, rows_out, 1 if not is_last_layer else 0)
             cl.enqueue_task(self.queue, self.kForward).wait()
 
             if is_last_layer:
                 print("Running layer {} softmax kernel".format(layer))
-                self.kForwardSoftMax.set_args(self.act_buffers[layer+1],
+                self.kForwardSoftMax.set_args(self.act_buffers[layer + 1],
                                               self.minibatch_size, rows_out)
                 cl.enqueue_task(self.queue, self.kForwardSoftMax).wait()
 
     def cpu_function(self, benchmark=False):
         for layer in range(0, self.layers):
-            self.act_cpu[layer+1] = self.cpu_forward(self.act_cpu[layer], self.weights[layer], self.bias[layer])
-            if layer+1 != self.layers:
-                self.act_cpu[layer + 1] = self.cpu_relu(self.act_cpu[layer+1])
+            self.act_cpu[layer + 1] = self.cpu_forward(self.act_cpu[layer], self.weights[layer], self.bias[layer])
+            if layer + 1 != self.layers:
+                self.act_cpu[layer + 1] = self.cpu_relu(self.act_cpu[layer + 1])
             else:
                 self.act_cpu[layer + 1] = self.cpu_softmax(self.act_cpu[layer + 1])
 
@@ -245,8 +247,7 @@ class FPGATest:
         self.act[0] = self.aligned(self.x_test[batch * self.minibatch_size:(batch + 1) * self.minibatch_size, :],
                                    alignment=64)
         self.act_cpu[0] = self.aligned(self.x_test[batch * self.minibatch_size:(batch + 1) * self.minibatch_size, :],
-                                   alignment=64)
-
+                                       alignment=64)
 
         self.ground_truth = self.y_test[batch * self.minibatch_size:(batch + 1) * self.minibatch_size]
 
@@ -260,7 +261,8 @@ class FPGATest:
         for layer in range(0, self.layers):
             self.act_buffers[layer] = cl.Buffer(self.ctx, mf.COPY_HOST_PTR, hostbuf=self.act[layer])
             self.bias_buffers[layer] = cl.Buffer(self.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=self.bias[layer])
-            self.weights_buffers[layer] = cl.Buffer(self.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=self.aligned(self.weights[layer].T.copy(), alignment=64))
+            self.weights_buffers[layer] = cl.Buffer(self.ctx, mf.READ_ONLY | mf.COPY_HOST_PTR,
+                                                    hostbuf=self.aligned(self.weights[layer].T.copy(), alignment=64))
         # Final output
         self.act_buffers[self.layers] = cl.Buffer(self.ctx, mf.COPY_HOST_PTR, hostbuf=self.act[self.layers])
 

@@ -11,8 +11,6 @@ class BaseEngine:
 
     def __init__(self, set_verify_config=False):
 
-
-
         self.LAYER_FILENAME = "layer_cifar_{0}.p"
         self.testbatch_size = 10000
         self.minibatch_size = 10000
@@ -36,7 +34,6 @@ class BaseEngine:
         self.ground_truth = None
 
         if set_verify_config:
-
             self.LAYER_FILENAME = "verify_{0}.p"
             self.testbatch_size = 32
             self.minibatch_size = 32
@@ -55,7 +52,7 @@ class BaseEngine:
         if set_verify_config:
             print("Generating fake data...")
 
-            self.y_test = np.zeros((self.minibatch_size, ), dtype=settings.NN_T)
+            self.y_test = np.zeros((self.minibatch_size,), dtype=settings.NN_T)
             self.x_test = np.zeros((self.minibatch_size, self.layer_height[0]), dtype=settings.NN_T)
 
             self.y_train = np.zeros((self.minibatch_size, self.layer_height[self.layers]), dtype=settings.NN_T)
@@ -158,8 +155,10 @@ class BaseEngine:
                 self.bias[layer] = self.aligned(layer_file['bias'].reshape(size_bias), alignment=64)
             else:
                 # Layer weights
-                self.weights[layer] = self.aligned(np.random.uniform(-0.01,0.01,size=size_weights).astype(dtype=settings.NN_T), alignment=64)
-                self.bias[layer] = self.aligned(np.random.uniform(-0.01,0.01,size=size_bias).astype(dtype=settings.NN_T), alignment=64)
+                self.weights[layer] = self.aligned(
+                    np.random.uniform(-0.01, 0.01, size=size_weights).astype(dtype=settings.NN_T), alignment=64)
+                self.bias[layer] = self.aligned(
+                    np.random.uniform(-0.01, 0.01, size=size_bias).astype(dtype=settings.NN_T), alignment=64)
             # Temp buffer
             self.dW[layer] = self.aligned(np.zeros(size_weights, dtype=settings.NN_T), alignment=64)
             # Memory
@@ -232,19 +231,19 @@ class BaseEngine:
         return self.delta[layer]
 
     def verify_act(self, comparative_engine, layer=0):
-        return self.verify(comparative_engine.get_act(layer),self.get_act(layer))
+        return self.verify(comparative_engine.get_act(layer), self.get_act(layer))
 
     def verify_weights(self, comparative_engine, layer=0):
-        return self.verify(comparative_engine.get_weights(layer),self.get_weights(layer))
+        return self.verify(comparative_engine.get_weights(layer), self.get_weights(layer))
 
     def verify_dW(self, comparative_engine, layer=0):
-        return self.verify(comparative_engine.get_dW(layer),self.get_dW(layer))
+        return self.verify(comparative_engine.get_dW(layer), self.get_dW(layer))
 
     def verify_bias(self, comparative_engine, layer=0):
-        return self.verify(comparative_engine.get_bias(layer),self.get_bias(layer))
+        return self.verify(comparative_engine.get_bias(layer), self.get_bias(layer))
 
     def verify_delta(self, comparative_engine, layer=0):
-        return self.verify(comparative_engine.get_delta(layer),self.get_delta(layer))
+        return self.verify(comparative_engine.get_delta(layer), self.get_delta(layer))
 
     @staticmethod
     def verify(comparative, local):

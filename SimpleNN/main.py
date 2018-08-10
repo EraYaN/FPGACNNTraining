@@ -34,6 +34,7 @@ def plot_decision_boundary(X, y, pred_func):
     plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
     plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
 
+
 def count_accuracy(X, y, W, B):
     a = {}
     z = {}
@@ -44,25 +45,27 @@ def count_accuracy(X, y, W, B):
     prediction_cpu = np.argmax(probs, axis=1)
 
     return np.sum(prediction_cpu == y) / y.shape[0]
-    #wrong_pred_cpu = np.sum(prediction_cpu != y)
+    # wrong_pred_cpu = np.sum(prediction_cpu != y)
+
 
 def make_data(num):
-    #mnist = fetch_mldata('MNIST original', data_home=custom_data_home)
+    # mnist = fetch_mldata('MNIST original', data_home=custom_data_home)
     return sklearn.datasets.make_blobs(num, n_features=num_inputs, centers=num_output, cluster_std=0.5, random_state=0)
+
 
 def main_func():
     # Generate a dataset and plot it
     np.random.seed(0)
     X, y = make_data(num_examples)
-    #plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
+    # plt.scatter(X[:, 0], X[:, 1], s=40, c=y, cmap=plt.cm.Spectral)
 
     w = {}
     b = {}
     a = {}
     z = {}
     for i in range(0, layers):
-        w[i] = np.random.rand(n[i], n[i+1]) / np.sqrt(n[i])
-        b[i] = np.zeros((1, n[i+1]))
+        w[i] = np.random.rand(n[i], n[i + 1]) / np.sqrt(n[i])
+        b[i] = np.zeros((1, n[i + 1]))
 
     train(X, y, a, w, b, z, True)
 
@@ -116,8 +119,8 @@ def forward(A, W, B, Z):
         # print("Shape of W[{0}]: {1}".format(i,W[i].shape))
         # print("Shape of b[{0}]: {1}".format(i, B[i].shape))
         # print("Shape of A[{0}]: {1}".format(i-1, A[i-1].shape))
-        Z[i+1] = infer_layer(A[i], W[i], B[i])
-        A[i+1] = activate(Z[i+1], i)
+        Z[i + 1] = infer_layer(A[i], W[i], B[i])
+        A[i + 1] = activate(Z[i + 1], i)
 
 
 def backward(A, W, B, probs, y):
@@ -129,17 +132,17 @@ def backward(A, W, B, probs, y):
     # print("A: ",A)
     # print("B: ",B)
     # print("delta: ",delta)
-    for i in range(layers-1, 0, -1):
+    for i in range(layers - 1, 0, -1):
         # print("Layer {0} out of {1}\n".format(i+1,layers))
         # print("Shape of W[{0}]: {1}".format(i, W[i].shape))
         # print("Shape of b[{0}]: {1}".format(i, B[i].shape))
         # print("Shape of A[{0}]: {1}".format(i, A[i].shape))
 
-        dW[i] = A[i].T.dot(delta[i+1])
+        dW[i] = A[i].T.dot(delta[i + 1])
         #
-        db[i] = np.sum(delta[i+1], axis=0, keepdims=True)
+        db[i] = np.sum(delta[i + 1], axis=0, keepdims=True)
         #
-        delta[i] = delta[i+1].dot(W[i].T) * np.clip(A[i], 0, np.Inf)
+        delta[i] = delta[i + 1].dot(W[i].T) * np.clip(A[i], 0, np.Inf)
 
         #
         # print(delta[i].shape, A[i].shape)
@@ -152,17 +155,17 @@ def backward(A, W, B, probs, y):
         # print("Shape of W[{0}]: {1}".format(i,W[i].shape))
         # print("Shape of b[{0}]: {1}".format(i, B[i].shape))
         # print("Shape of A[{0}]: {1}".format(i-1, A[i-1].shape))
-        #dW[i] = (A[i - 1].T).dot(delta[i + 1]) / A[i - 1].shape[0]
-        #print("Delta\n")
+        # dW[i] = (A[i - 1].T).dot(delta[i + 1]) / A[i - 1].shape[0]
+        # print("Delta\n")
         # print(delta[i+1])
-        #db[i] = np.sum(delta[i + 1], axis=0, keepdims=True)
+        # db[i] = np.sum(delta[i + 1], axis=0, keepdims=True)
         # print(db[i])
         # print(delta[i-1])
         # print(W[i].T)
-        #print((delta[i + 1].dot(W[i].T)))
-        #print((1 - np.power(A[i - 1], 2)))
-        #delta[i] = delta[i + 1].dot(W[i].T) * (1 - np.power(A[i - 1], 2))
-        #print(delta[i])
+        # print((delta[i + 1].dot(W[i].T)))
+        # print((1 - np.power(A[i - 1], 2)))
+        # delta[i] = delta[i + 1].dot(W[i].T) * (1 - np.power(A[i - 1], 2))
+        # print(delta[i])
         # print(delta[i])
         # exit(0)
 
@@ -181,7 +184,7 @@ def train(X, y, A, W, B, Z, print_loss=False):
             batch_start = batch * num_batchsize
             A[0] = np.array(X[batch_start:batch_start + num_batchsize, :])
             y_batch = np.array(y[batch_start:batch_start + num_batchsize])
-            #print(A[0].shape)
+            # print(A[0].shape)
             # Forward propagation
             forward(A, W, B, Z)
 

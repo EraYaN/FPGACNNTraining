@@ -26,5 +26,4 @@ if __name__ == "__main__":
     print("CPU Time: {0} usec. {1:.3f} GFLOPS".format(cpu_time * 1e6,
                                                       ops / 1e9 / cpu_time))
 
-
     fpga_engine.verify_results(cpu_engine.get_output())

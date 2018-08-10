@@ -53,7 +53,6 @@ class FPGAEngine(BaseEngine):
 
             binaries = [binary] * len(devices)
 
-
             program = cl.Program(self.ctx, devices, binaries)
         else:
             print("Reading program...")
@@ -107,12 +106,14 @@ class FPGAEngine(BaseEngine):
             is_last_layer = layer == self.layers
             if is_last_layer:
                 self.kBackwardFirstDelta.set_args(self.act_buffers[layer], self.ground_truth_buffer,
-                                                  self.delta_buffers[layer], self.minibatch_size, self.layer_height[layer])
+                                                  self.delta_buffers[layer], self.minibatch_size,
+                                                  self.layer_height[layer])
                 cl.enqueue_task(self.queue, self.kBackwardFirstDelta).wait()
             else:
                 rows_out = self.layer_height[layer + 1]
                 self.kBackward.set_args(self.act_buffers[layer], self.weights_buffers[layer], self.dW_buffers[layer],
-                                        self.bias_buffers[layer], self.delta_buffers[layer], self.delta_buffers[layer + 1],
+                                        self.bias_buffers[layer], self.delta_buffers[layer],
+                                        self.delta_buffers[layer + 1],
                                         self.learn_rate, self.minibatch_size, rows_in, rows_out)
                 cl.enqueue_task(self.queue, self.kBackward).wait()
 
@@ -174,8 +175,8 @@ class FPGAEngine(BaseEngine):
 
         cl.enqueue_copy(self.queue, self.act_buffers[0], self.act[0]).wait()
 
-        #print(self.ground_truth_buffer)
-       # print(self.ground_truth.shape)
+        # print(self.ground_truth_buffer)
+        # print(self.ground_truth.shape)
         cl.enqueue_copy(self.queue, self.ground_truth_buffer, self.ground_truth).wait()
 
     def send_buffers_to_device(self):
@@ -190,7 +191,7 @@ class FPGAEngine(BaseEngine):
             self.weightsT[layer] = self.aligned(self.weights[layer].T.copy(), alignment=64)
             self.weights_buffers[layer] = cl.Buffer(self.ctx, mf.COPY_HOST_PTR, hostbuf=self.weightsT[layer])
             self.dWT[layer] = self.aligned(self.dW[layer].T.copy(), alignment=64)
-            self.dW_buffers[layer] = cl.Buffer(self.ctx, mf.COPY_HOST_PTR,hostbuf=self.dWT[layer])
+            self.dW_buffers[layer] = cl.Buffer(self.ctx, mf.COPY_HOST_PTR, hostbuf=self.dWT[layer])
 
         # Final output
         self.act_buffers[self.layers] = cl.Buffer(self.ctx, mf.COPY_HOST_PTR, hostbuf=self.act[self.layers])
@@ -204,7 +205,7 @@ class FPGAEngine(BaseEngine):
             for layer in range(0, self.layers):
                 if not benchmark:
                     print("Transferring all values from device for layer {}...".format(layer))
-                    #print(self.bias[layer],self.bias_buffers[layer])
+                    # print(self.bias[layer],self.bias_buffers[layer])
                 cl.enqueue_copy(self.queue, self.weightsT[layer], self.weights_buffers[layer]).wait()
                 self.weights[layer] = self.weightsT[layer].T
                 cl.enqueue_copy(self.queue, self.dWT[layer], self.dW_buffers[layer]).wait()
@@ -218,7 +219,6 @@ class FPGAEngine(BaseEngine):
         if not benchmark:
             print("Transferring final result from device...")
         cl.enqueue_copy(self.queue, self.act[self.layers], self.act_buffers[self.layers]).wait()
-
 
     def finish_device_queue(self):
         print("Finishing queue..")

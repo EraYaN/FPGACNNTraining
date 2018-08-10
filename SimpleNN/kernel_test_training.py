@@ -4,13 +4,14 @@ import test_nn_framework as tnnf
 import numpy as np
 import keras
 
-def display_verify_result(res,name="Data"):
+
+def display_verify_result(res, name="Data"):
     total = len(res)
     correct = 0
     for i in res:
         if res[i]:
             correct += 1
-    print("{} Verify Result: {} out of {} correct.".format(name, correct, total),res)
+    print("{} Verify Result: {} out of {} correct.".format(name, correct, total), res)
 
 
 if __name__ == "__main__":
@@ -28,9 +29,11 @@ if __name__ == "__main__":
     fpga_engine.create_buffers(pretrained=False)
 
     np.random.seed(0)
-    input_cpu = np.random.randint(1, 4, size=(cpu_engine.minibatch_size,cpu_engine.layer_height[0])).astype(dtype=np.float32)
+    input_cpu = np.random.randint(1, 4, size=(cpu_engine.minibatch_size, cpu_engine.layer_height[0])).astype(
+        dtype=np.float32)
     ground_truth_cpu = np.random.randint(0, cpu_engine.layer_height[cpu_engine.layers], size=cpu_engine.minibatch_size)
-    ground_truth_cpu = keras.utils.to_categorical(ground_truth_cpu, cpu_engine.layer_height[cpu_engine.layers]).astype(dtype=np.float32)
+    ground_truth_cpu = keras.utils.to_categorical(ground_truth_cpu, cpu_engine.layer_height[cpu_engine.layers]).astype(
+        dtype=np.float32)
 
     cpu_engine.set_input(input_cpu, ground_truth_cpu)
 
@@ -43,7 +46,6 @@ if __name__ == "__main__":
     print("Running FPGA code...")
     fpga_engine.fw_function()
     fpga_engine.bw_function()
-
 
     print("Getting all device buffers...")
 
@@ -61,7 +63,7 @@ if __name__ == "__main__":
 
     for layer in range(0, fpga_engine.layers):
         print("Verifying dW[{}]".format(layer))
-        dW_matches[layer] = fpga_engine.verify_dW(cpu_engine,layer=layer)
+        dW_matches[layer] = fpga_engine.verify_dW(cpu_engine, layer=layer)
         print("Verifying bias[{}]".format(layer))
         bias_matches[layer] = fpga_engine.verify_bias(cpu_engine, layer=layer)
         print("Verifying weights[{}]".format(layer))
@@ -76,9 +78,8 @@ if __name__ == "__main__":
     print("Verifying act[{}]".format(fpga_engine.layers))
     act_matches[fpga_engine.layers] = fpga_engine.verify_act(cpu_engine, layer=fpga_engine.layers)
 
-    display_verify_result(dW_matches,"dW")
+    display_verify_result(dW_matches, "dW")
     display_verify_result(weights_matches, "weights")
     display_verify_result(delta_matches, "delta")
     display_verify_result(bias_matches, "bias")
     display_verify_result(act_matches, "act")
-
