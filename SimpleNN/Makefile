@@ -6,7 +6,7 @@ PROJECT ?= test
 BUILDTIME ?= 0
 BOARD ?= p510t_sch_ax115
 
-BUILDDIR = $(abspath /local/erwin/build_cache)
+BUILDDIR = $(abspath /home/erwin/build_cache)
 SRCDIR = $(abspath ./device)
 OUTPUTDIR = $(abspath ./kernels)
 

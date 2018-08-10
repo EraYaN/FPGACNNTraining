@@ -140,6 +140,7 @@ def backward(A, W, B, probs, y):
         db[i] = np.sum(delta[i+1], axis=0, keepdims=True)
         #
         delta[i] = delta[i+1].dot(W[i].T) * np.clip(A[i], 0, np.Inf)
+
         #
         # print(delta[i].shape, A[i].shape)
         # # apply relu derive product

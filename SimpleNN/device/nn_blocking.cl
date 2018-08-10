@@ -11,6 +11,29 @@ typedef float nn_t; //main type used
 #endif
 #define II_CYCLES FMA_LATENCY
 
+void gemm_nn(int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        __global nn_t *restrict C, int ldc);
+void gemm_nt(int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        __global nn_t *restrict C, int ldc);
+void gemm_nt(int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        __global nn_t *restrict C, int ldc);
+void gemm_tt(int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        __global nn_t *restrict C, int ldc);
+void gemm(int TA, int TB, int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        nn_t BETA,
+        __global nn_t *restrict C, int ldc);
+        
+
 __kernel void forward(global nn_t *restrict activations_in, global nn_t *restrict weights_in, global nn_t *restrict bias_in,
                               global nn_t *restrict activations_out, int minibatch_size, int rows_in, int rows_out, int enable_relu)
 {
@@ -176,9 +199,11 @@ __kernel void forward(global nn_t *restrict activations_in, global nn_t *restric
 __kernel void forward_softmax(global nn_t *restrict activations_out, int minibatch_size, int rows_out) {
     for (int i = 0; i < minibatch_size; i++) {
         int mi = rows_out * i;
-        float max = -INFINITY;
+        
+        nn_t max = -INFINITY;
         // find the max
         for (int j = 0; j < rows_out; j++) {
+            //printf("act old %d: %f\n",mi+j,activations_out[mi + j]);
             if(activations_out[mi + j]>max){
                 //printf("Max: %f is larger then %f\n",activations_out[mi + j],max);
                 max = activations_out[mi + j];
@@ -188,17 +213,20 @@ __kernel void forward_softmax(global nn_t *restrict activations_out, int minibat
         }
         //printf("Max: %f\n",max);
         // sum the vector
-        float sum = 0;
+        nn_t sum = 0;
         for (int j = 0; j < rows_out; j++) {
-            float temp = exp(activations_out[mi + j] - max);
+            nn_t temp = exp(activations_out[mi + j] - max);
             sum+=temp;
             activations_out[mi + j] = temp;
         }
         // divide the vector       
         sum = 1 / sum;
         for (int j = 0; j < rows_out; j++) {
+            
             activations_out[mi + j] = activations_out[mi + j] * sum;
+            //printf("act new %d: %f\n",mi+j,activations_out[mi + j]);
         }
+        
     }
 }
 
@@ -206,31 +234,154 @@ __kernel void backward_first_delta(global nn_t *restrict activations_out, global
     for (int i = 0; i < minibatch_size; i++) {
         int mi = rows_out * i;
         for (int j = 0; j < rows_out; j++) {
-            delta[mi + j] = activations_out[mi+j] - ground_truth[mi+j];
+            //printf("#%d prob: %f; gt: %f; deriv: %d\n",mi+j,activations_out[mi + j],ground_truth[mi + j],(activations_out[mi + j] < 0 ? 0 : 1));
+            //delta[mi + j] = (activations_out[mi + j] - ground_truth[mi + j]) * (activations_out[mi + j] < 0 ? 0 : 1);
+            delta[mi + j] = -ground_truth[mi + j] / (activations_out[mi + j] + 0.0001);
         }
     }
 }
 
-__kernel void backward(global nn_t *restrict activations, global nn_t *restrict weights, global nn_t *restrict bias, global nn_t *restrict delta_next, nn_t learn_rate, int minibatch_size, int rows_in, int rows_out){
-    nn_t dW[rows_out*rows_in];
-    //nn_t db[rows_out];
-    //nn_t activations_prev_sq[minibatch_size*rows_in]; //rows_in is the length of the previous layer
-
+__kernel void backward(global nn_t *restrict activations, global nn_t *restrict weights, global nn_t * restrict dW, global nn_t *restrict bias, global nn_t *restrict delta, global nn_t *restrict delta_next, nn_t learn_rate, int minibatch_size, int rows_in, int rows_out){
+    
+    //Process Bias
     for (int i = 0; i < minibatch_size; i++) {
         int mi = rows_out * i;
         for (int j = 0; j < rows_out; j++) {
-            db[mi + j] = 1 - activations_prev[mi+j]*activations_prev[mi+j];
+            //printf("#%d prob: %f; gt: %f; deriv: %d\n",mi+j,activations_out[mi + j],ground_truth[mi + j],(activations_out[mi + j] < 0 ? 0 : 1));
+            //delta[mi + j] = (activations_out[mi + j] - ground_truth[mi + j]) * (activations_out[mi + j] < 0 ? 0 : 1);
+            //printf("bias %d dn %d: %f\n",j,mi+j, delta_next[mi+j]);
+            bias[j] -= learn_rate * delta_next[mi+j];
         }
-        db[i]
+    }
+    
+    //Process dW
+    gemm(1,0, rows_out, rows_in, minibatch_size, 1, 
+        delta_next, rows_out, 
+        activations, rows_in,
+        0,
+        dW, rows_in);
+
+    //Apply stuff to weights (delta = dW)
+    for (int i = 0; i < rows_in; i++) {
+        int mi = rows_out * i;
+        for (int j = 0; j < rows_out; j++) {
+#ifdef DEBUG
+            printf("dW[%d,%d] = %f;\n",i,j,dW[mi+j]);
+#endif
+            //printf("weights[%d,%d] = %f;\n",i,j,weights[mi+j]);
+            weights[mi+j] -= learn_rate * dW[mi+j]; //delta is dW here
+        }
     }
 
-    //Process Bias
-    for (int i = 0; i < rows_out; i++) {
-        int mi = minibatch_size * i;
-        nn_t reduction_var = 0;
-        for (int j = 0; j < minibatch_size; j++) {
-            reduction_var += delta_next[mi+j];
+    //Process delta
+    gemm(0,0, minibatch_size, rows_in, rows_out, 1, 
+        delta_next, rows_out, 
+        weights, rows_in,
+        0,
+        delta, rows_in);
+
+    //Apply relu derivative
+    for (int i = 0; i < minibatch_size; i++) {
+        int mi = rows_in * i;
+        for (int j = 0; j < rows_in; j++) {
+            delta[mi+j] = delta[mi+j] > 0 ? 1 : 0;
         }
-        bias[i] -= learn_rate * reduction_var;
     }
+
+}
+
+void gemm_nn(int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        __global nn_t *restrict C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(k = 0; k < K; ++k){
+            local nn_t A_PART;
+            A_PART = ALPHA*A[i*lda+k];
+            for(j = 0; j < N; ++j){
+                C[i*ldc+j] += A_PART*B[k*ldb+j];
+            }
+        }
+    }
+}
+
+void gemm_nt(int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        __global nn_t *restrict C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            local nn_t sum;
+            sum = 0;
+            for(k = 0; k < K; ++k){
+                sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
+            }
+            C[i*ldc+j] += sum;
+        }
+    }
+}
+
+void gemm_tn(int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        __global nn_t *restrict C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(k = 0; k < K; ++k){
+            local nn_t A_PART;
+            A_PART = ALPHA*A[k*lda+i];
+            for(j = 0; j < N; ++j){
+                C[i*ldc+j] += A_PART*B[k*ldb+j];
+            }
+        }
+    }
+}
+
+void gemm_tt(int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        __global nn_t *restrict C, int ldc)
+{
+    int i,j,k;
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            local nn_t sum;
+            sum = 0;
+            for(k = 0; k < K; ++k){
+                sum += ALPHA*A[i+k*lda]*B[k+j*ldb];
+            }
+            C[i*ldc+j] += sum;
+        }
+    }
+}
+
+
+void gemm(int TA, int TB, int M, int N, int K, nn_t ALPHA, 
+        __global nn_t *restrict A, int lda, 
+        __global nn_t *restrict B, int ldb,
+        nn_t BETA,
+        __global nn_t *restrict C, int ldc)
+{
+#ifdef DEBUG
+    printf("gemm: %d %d %d %d %d %f %d %d %f %d\n",TA, TB, M, N, K, ALPHA, lda, ldb, BETA, ldc);
+#endif
+    int i, j;
+    for(i = 0; i < M; ++i){
+        for(j = 0; j < N; ++j){
+            C[i*ldc + j] *= BETA;
+        }
+    }
+    if(!TA && !TB)
+        gemm_nn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    else if(TA && !TB)
+        gemm_tn(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    else if(!TA && TB)
+        gemm_nt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
+    else
+        gemm_tt(M, N, K, ALPHA,A,lda, B, ldb,C,ldc);
 }

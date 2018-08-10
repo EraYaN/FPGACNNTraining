@@ -63,6 +63,7 @@ print('Test accuracy:', score[1])
 
 i = 0
 for layer in model.layers:
+
     data = {"weights": layer.get_weights()[0], "bias": layer.get_weights()[1]}
 
     pickle.dump(data, open("layer_mnist_{}.p".format(i), "wb"))

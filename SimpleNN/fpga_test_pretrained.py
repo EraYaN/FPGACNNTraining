@@ -84,12 +84,12 @@ class FPGATest:
 
         self.kForward = program.forward
         self.kForwardSoftMax = program.forward_softmax
-        # self.kBackWardFirstDelta = program.backward_first_delta
+        # self.kBackwardFirstDelta = program.backward_first_delta
         # self.kBackward = program.backward
 
         self.kForward.set_scalar_arg_dtypes([None, None, None, None, np.int32, np.int32, np.int32, np.int32])
         self.kForwardSoftMax.set_scalar_arg_dtypes([None, np.int32, np.int32])
-        # self.kBackWardFirstDelta.set_scalar_arg_dtypes([None, None, None, np.int32, np.int32])
+        # self.kBackwardFirstDelta.set_scalar_arg_dtypes([None, None, None, np.int32, np.int32])
         # self.kBackward.set_scalar_arg_dtypes(
         #    [None, None, None, None, NN_T, NN_T, np.int32, np.int32, np.int32])
 
