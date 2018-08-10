@@ -20,13 +20,12 @@ class CPUEngine(BaseEngine):
         # print(act)
         # print(np.max(act, axis=1, keepdims=True))
         e_act = np.exp(act - np.max(act, axis=1, keepdims=True))
-        print("softmax", np.divide(e_act, np.sum(e_act, axis=1, keepdims=True)), "e_act", e_act, "npsum e_act",
-              np.sum(e_act, axis=1, keepdims=True))
+        #print("softmax", np.divide(e_act, np.sum(e_act, axis=1, keepdims=True)), "e_act", e_act, "npsum e_act",
+        #      np.sum(e_act, axis=1, keepdims=True))
         return np.divide(e_act, np.sum(e_act, axis=1, keepdims=True))
 
     def first_delta(self, probs, ground_truth):
-        print("first delta", -ground_truth, " divided by ", probs + 0.0001)
-        return np.divide(-ground_truth, probs + 0.0001)
+        return np.divide(-ground_truth, probs)
 
     def backward(self, act, weights, bias, delta_next, learn_rate):
 
@@ -38,13 +37,16 @@ class CPUEngine(BaseEngine):
 
         print("shapes:",act.shape,delta_next.shape,dW.shape,weights.shape)
 
+        if delta.shape == (5,4):
+            print("delta", delta)
+            print("delta_NEXT", delta_next)
         # apply relu derive product
         delta = np.sign(delta)
         delta[delta == -1] = 0
         print("weights", weights)
         weights -= learn_rate * dW
         print("dW", dW)
-        # print("delta_NEXT", delta_next)
+
         # print("db", learn_rate * db)
         # print("bias", bias)
         bias -= learn_rate * db

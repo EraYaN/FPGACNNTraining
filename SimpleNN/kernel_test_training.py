@@ -4,6 +4,15 @@ import test_nn_framework as tnnf
 import numpy as np
 import keras
 
+def display_verify_result(res,name="Data"):
+    total = len(res)
+    correct = 0
+    for i in res:
+        if res[i]:
+            correct += 1
+    print("{} Verify Result: {} out of {} correct.".format(name, correct, total),res)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="FPGA bitstream loading from python")
     parser.add_argument("kernel_file", type=argparse.FileType('rb'))
@@ -48,6 +57,7 @@ if __name__ == "__main__":
     bias_matches = {}
     weights_matches = {}
     delta_matches = {}
+    act_matches = {}
 
     for layer in range(0, fpga_engine.layers):
         print("Verifying dW[{}]".format(layer))
@@ -58,15 +68,17 @@ if __name__ == "__main__":
         weights_matches[layer] = fpga_engine.verify_weights(cpu_engine, layer=layer)
         print("Verifying delta[{}]".format(layer))
         delta_matches[layer] = fpga_engine.verify_delta(cpu_engine, layer=layer)
+        print("Verifying act[{}]".format(layer))
+        act_matches[layer] = fpga_engine.verify_act(cpu_engine, layer=layer)
 
     print("Verifying delta[{}]".format(fpga_engine.layers))
     delta_matches[fpga_engine.layers] = fpga_engine.verify_delta(cpu_engine, layer=fpga_engine.layers)
+    print("Verifying act[{}]".format(fpga_engine.layers))
+    act_matches[fpga_engine.layers] = fpga_engine.verify_act(cpu_engine, layer=fpga_engine.layers)
 
-    output_matches = fpga_engine.verify_output(cpu_engine)
-
-    print("dW result: ", dW_matches)
-    print("bias result: ", bias_matches)
-    print("weights result: ", weights_matches)
-    print("delta result: ", delta_matches)
-    print("output result: ", output_matches)
+    display_verify_result(dW_matches,"dW")
+    display_verify_result(weights_matches, "weights")
+    display_verify_result(delta_matches, "delta")
+    display_verify_result(bias_matches, "bias")
+    display_verify_result(act_matches, "act")
 

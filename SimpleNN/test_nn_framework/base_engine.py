@@ -11,8 +11,7 @@ class BaseEngine:
 
     def __init__(self, set_verify_config=False):
 
-        self.hidden_layers = 2
-        self.layers = self.hidden_layers + 2
+
 
         self.LAYER_FILENAME = "layer_cifar_{0}.p"
         self.testbatch_size = 10000
@@ -21,6 +20,9 @@ class BaseEngine:
 
         # layer_height = [28 * 28, 512, 512, 10] # MNIST
         self.layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
+
+        self.layers = len(self.layer_height) - 1
+        self.hidden_layers = len(self.layer_height) - 2
 
         self.learn_rate = 0.005
         self.regulation_strength = 0.002
@@ -34,15 +36,16 @@ class BaseEngine:
         self.ground_truth = None
 
         if set_verify_config:
-            self.hidden_layers = 2
-            self.layers = self.hidden_layers + 2
 
             self.LAYER_FILENAME = "verify_{0}.p"
-            self.testbatch_size = 16
-            self.minibatch_size = 16
+            self.testbatch_size = 32
+            self.minibatch_size = 32
             self.epochs = 100
 
-            self.layer_height = [32, 16, 16, 16, 4]  # verify sizes
+            self.layer_height = [100, 32, 16, 8, 2]  # verify sizes
+
+            self.layers = len(self.layer_height) - 1
+            self.hidden_layers = len(self.layer_height) - 2
 
         if self.layers + 1 != len(self.layer_height):
             print("Bad network config.")
@@ -213,8 +216,8 @@ class BaseEngine:
         self.correct_pred += np.sum(prediction == ground_truth)
         self.wrong_pred += np.sum(prediction != ground_truth)
 
-    def get_output(self):
-        return self.act[self.layers]
+    def get_act(self, layer=0):
+        return self.act[layer]
 
     def get_weights(self, layer=0):
         return self.weights[layer]
@@ -228,8 +231,8 @@ class BaseEngine:
     def get_delta(self, layer=0):
         return self.delta[layer]
 
-    def verify_output(self, comparative_engine):
-        return self.verify(comparative_engine.get_output(),self.get_output())
+    def verify_act(self, comparative_engine, layer=0):
+        return self.verify(comparative_engine.get_act(layer),self.get_act(layer))
 
     def verify_weights(self, comparative_engine, layer=0):
         return self.verify(comparative_engine.get_weights(layer),self.get_weights(layer))
@@ -253,6 +256,7 @@ class BaseEngine:
                 print("COMPARISON PASSED!!")
                 print("Max Error: {0}".format(np.max(np.abs(comparative - local))))
                 print("Min Error: {0}".format(np.min(np.abs(comparative - local))))
+                print("Tot Error: {0}".format(np.sum(np.abs(comparative - local))))
                 return True
             else:
                 print("COMPARISON DID NOT PASS.")
@@ -262,6 +266,7 @@ class BaseEngine:
                 print(comparative)
                 print("Max Error: {0}".format(np.max(np.abs(comparative - local))))
                 print("Min Error: {0}".format(np.min(np.abs(comparative - local))))
+                print("Tot Error: {0}".format(np.sum(np.abs(comparative - local))))
                 return False
 
     def print_accuracy(self):
