@@ -236,7 +236,7 @@ __kernel void backward_first_delta(global nn_t *restrict activations_out, global
         for (int j = 0; j < rows_out; j++) {
             //printf("#%d prob: %f; gt: %f; deriv: %d\n",mi+j,activations_out[mi + j],ground_truth[mi + j],(activations_out[mi + j] < 0 ? 0 : 1));
             //delta[mi + j] = (activations_out[mi + j] - ground_truth[mi + j]) * (activations_out[mi + j] < 0 ? 0 : 1);
-            delta[mi + j] = -ground_truth[mi + j] / (activations_out[mi + j] + 0.0001);
+            delta[mi + j] = -ground_truth[mi + j] / (activations_out[mi + j]);
         }
     }
 }
@@ -254,6 +254,25 @@ __kernel void backward(global nn_t *restrict activations, global nn_t *restrict 
         }
     }
     
+    //Process delta
+    gemm(0,0, minibatch_size, rows_in, rows_out, 1, 
+        delta_next, rows_out, 
+        weights, rows_in,
+        0,
+        delta, rows_in);
+
+    //Apply relu derivative
+    printf("Delta (%d,%d): \n------\n",minibatch_size,rows_in);
+    for (int i = 0; i < minibatch_size; i++) {
+        int mi = rows_in * i;
+        for (int j = 0; j < rows_in; j++) {
+            printf("%f\t",delta[mi+j]);
+            delta[mi+j] = delta[mi+j] > 0 ? 1 : 0;
+        }
+        printf("\n");
+    }
+    printf("------\n");
+
     //Process dW
     gemm(1,0, rows_out, rows_in, minibatch_size, 1, 
         delta_next, rows_out, 
@@ -271,22 +290,9 @@ __kernel void backward(global nn_t *restrict activations, global nn_t *restrict 
             //printf("weights[%d,%d] = %f;\n",i,j,weights[mi+j]);
             weights[mi+j] -= learn_rate * dW[mi+j]; //delta is dW here
         }
-    }
+    }   
 
-    //Process delta
-    gemm(0,0, minibatch_size, rows_in, rows_out, 1, 
-        delta_next, rows_out, 
-        weights, rows_in,
-        0,
-        delta, rows_in);
-
-    //Apply relu derivative
-    for (int i = 0; i < minibatch_size; i++) {
-        int mi = rows_in * i;
-        for (int j = 0; j < rows_in; j++) {
-            delta[mi+j] = delta[mi+j] > 0 ? 1 : 0;
-        }
-    }
+    
 
 }
 
