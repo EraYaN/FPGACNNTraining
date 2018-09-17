@@ -1,7 +1,7 @@
 typedef float nn_t; //main type used
 
 //#define DEBUG 1
-#define BLOCK_SIZE 32
+#define BLOCK_SIZE 16
 #define BLOCK_MEM (BLOCK_SIZE * BLOCK_SIZE)
 
 #ifdef AOCL_BOARD_p510t_sch_ax115
@@ -262,16 +262,16 @@ __kernel void backward(global nn_t *restrict activations, global nn_t *restrict 
         delta, rows_in);
 
     //Apply relu derivative
-    printf("Delta (%d,%d): \n------\n",minibatch_size,rows_in);
+    //printf("Delta (%d,%d): \n------\n",minibatch_size,rows_in);
     for (int i = 0; i < minibatch_size; i++) {
         int mi = rows_in * i;
         for (int j = 0; j < rows_in; j++) {
-            printf("%f\t",delta[mi+j]);
+            //printf("%f\t",delta[mi+j]);
             delta[mi+j] = delta[mi+j] > 0 ? 1 : 0;
         }
-        printf("\n");
+        //printf("\n");
     }
-    printf("------\n");
+    //printf("------\n");
 
     //Process dW
     gemm(1,0, rows_out, rows_in, minibatch_size, 1, 
@@ -304,7 +304,7 @@ void gemm_nn(int M, int N, int K, nn_t ALPHA,
     int i,j,k;
     for(i = 0; i < M; ++i){
         for(k = 0; k < K; ++k){
-            local nn_t A_PART;
+            nn_t A_PART;
             A_PART = ALPHA*A[i*lda+k];
             for(j = 0; j < N; ++j){
                 C[i*ldc+j] += A_PART*B[k*ldb+j];
@@ -321,7 +321,7 @@ void gemm_nt(int M, int N, int K, nn_t ALPHA,
     int i,j,k;
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
-            local nn_t sum;
+            nn_t sum;
             sum = 0;
             for(k = 0; k < K; ++k){
                 sum += ALPHA*A[i*lda+k]*B[j*ldb + k];
@@ -339,7 +339,7 @@ void gemm_tn(int M, int N, int K, nn_t ALPHA,
     int i,j,k;
     for(i = 0; i < M; ++i){
         for(k = 0; k < K; ++k){
-            local nn_t A_PART;
+            nn_t A_PART;
             A_PART = ALPHA*A[k*lda+i];
             for(j = 0; j < N; ++j){
                 C[i*ldc+j] += A_PART*B[k*ldb+j];
@@ -356,7 +356,7 @@ void gemm_tt(int M, int N, int K, nn_t ALPHA,
     int i,j,k;
     for(i = 0; i < M; ++i){
         for(j = 0; j < N; ++j){
-            local nn_t sum;
+            nn_t sum;
             sum = 0;
             for(k = 0; k < K; ++k){
                 sum += ALPHA*A[i+k*lda]*B[k+j*ldb];
