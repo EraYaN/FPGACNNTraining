@@ -19,7 +19,7 @@ void gemm_nt(int M, int N, int K, nn_t ALPHA,
         __global nn_t *restrict A, int lda, 
         __global nn_t *restrict B, int ldb,
         __global nn_t *restrict C, int ldc);
-void gemm_nt(int M, int N, int K, nn_t ALPHA, 
+void gemm_tn(int M, int N, int K, nn_t ALPHA, 
         __global nn_t *restrict A, int lda, 
         __global nn_t *restrict B, int ldb,
         __global nn_t *restrict C, int ldc);
@@ -236,7 +236,7 @@ __kernel void backward_first_delta(global nn_t *restrict activations_out, global
         for (int j = 0; j < rows_out; j++) {
             //printf("#%d prob: %f; gt: %f; deriv: %d\n",mi+j,activations_out[mi + j],ground_truth[mi + j],(activations_out[mi + j] < 0 ? 0 : 1));
             //delta[mi + j] = (activations_out[mi + j] - ground_truth[mi + j]) * (activations_out[mi + j] < 0 ? 0 : 1);
-            delta[mi + j] = -ground_truth[mi + j] / (activations_out[mi + j]);
+            delta[mi + j] = (activations_out[mi + j] - ground_truth[mi + j]) / minibatch_size;
         }
     }
 }
@@ -267,7 +267,7 @@ __kernel void backward(global nn_t *restrict activations, global nn_t *restrict 
         int mi = rows_in * i;
         for (int j = 0; j < rows_in; j++) {
             //printf("%f\t",delta[mi+j]);
-            delta[mi+j] = delta[mi+j] > 0 ? 1 : 0;
+            delta[mi+j] = activations[mi+j] > 0 ? delta[mi+j] : 0;
         }
         //printf("\n");
     }

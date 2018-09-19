@@ -19,6 +19,8 @@ class FPGAEngine(BaseEngine):
     def __init__(self, kernel_file, set_verify_config=False):
         super().__init__(set_verify_config=set_verify_config)
 
+        assert self.minibatch_size == self.testbatch_size, "minibatch size and testbatch size need to be the same for the FPGA engine."
+
         self.act_buffers = {}
         self.delta_buffers = {}
         self.bias_buffers = {}
@@ -81,6 +83,12 @@ class FPGAEngine(BaseEngine):
                 return platform
         return None
 
+    def cross_entropy(self, predictions, ground_truth, epsilon=1e-12):
+        predictions = np.clip(predictions, epsilon, 1. - epsilon)
+        N = predictions.shape[0]
+        ce = np.sum(np.sum(-ground_truth * np.log(predictions + 1e-9))) / N
+        return ce
+
     def fw_function(self, benchmark=False):
         for layer in range(0, self.layers):
             rows_in = self.layer_height[layer]
@@ -119,9 +127,14 @@ class FPGAEngine(BaseEngine):
 
     def train(self):
         batches = int(self.x_train.shape[0] / self.minibatch_size)
+        if self.batch_limit is not None:
+            batches = self.batch_limit
+        # batches = 20
+        print("Training with {} batches of size {}".format(batches, self.minibatch_size))
 
         for epoch in range(0, self.epochs):
-            # print("Running {} batches...".format(batches))
+            print("Epoch {} of {}...".format(epoch + 1, self.epochs))
+            self.shuffle_train_set()
             for batch in range(0, batches):
                 self.set_train_input(batch)
 
@@ -129,6 +142,8 @@ class FPGAEngine(BaseEngine):
 
                 self.bw_function()
 
+                sys.stdout.write("Batch {} of {} complete.\r".format(batch + 1, batches))
+            print("Epoch {} of {} is complete.".format(epoch + 1, self.epochs))
             self.test()
 
     def test(self):
@@ -148,9 +163,8 @@ class FPGAEngine(BaseEngine):
             self.retrieve_buffers_from_device()
 
             self.count_accuracy()
-            if i % 10 == 0:
-                print("FPGA Batch {}/{} done.\n".format(i + 1, batches))
-                self.print_accuracy()
+        self.loss = self.cross_entropy(self.act[self.layers], self.ground_truth)
+        self.print_accuracy()
 
         return fpga_time
 
@@ -171,12 +185,9 @@ class FPGAEngine(BaseEngine):
         cl.enqueue_copy(self.queue, self.ground_truth_buffer, self.ground_truth).wait()
 
     def set_test_input(self, batch):
+
         super(FPGAEngine, self).set_test_input(batch)
-
         cl.enqueue_copy(self.queue, self.act_buffers[0], self.act[0]).wait()
-
-        # print(self.ground_truth_buffer)
-        # print(self.ground_truth.shape)
         cl.enqueue_copy(self.queue, self.ground_truth_buffer, self.ground_truth).wait()
 
     def send_buffers_to_device(self):

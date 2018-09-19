@@ -1,6 +1,7 @@
 import numpy as np
+import tensorflow as tf
 import keras
-from keras.datasets import cifar10 as input_data
+from keras.datasets import mnist as input_data
 import pickle
 import sys
 
@@ -11,18 +12,19 @@ class BaseEngine:
 
     def __init__(self, set_verify_config=False):
 
-        self.LAYER_FILENAME = "layer_cifar_{0}.p"
-        self.testbatch_size = 10000
-        self.minibatch_size = 10000
-        self.epochs = 100
+        self.LAYER_FILENAME = "layer_mnist_{0}.p"
+        self.testbatch_size = 128
+        self.minibatch_size = 128
+        self.epochs = 1
+        self.batch_limit = None
 
-        # layer_height = [28 * 28, 512, 512, 10] # MNIST
-        self.layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
+        self.layer_height = [28 * 28, 512, 512, 10] # MNIST
+        # self.layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
 
         self.layers = len(self.layer_height) - 1
         self.hidden_layers = len(self.layer_height) - 2
 
-        self.learn_rate = 0.005
+        self.learn_rate = 0.01
         self.regulation_strength = 0.002
 
         self.act = {}
@@ -72,11 +74,12 @@ class BaseEngine:
             self.x_test = self.x_test.astype('float32')
             self.x_test /= 255
 
-            self.y_train = keras.utils.to_categorical(self.y_train, self.layer_height[self.layers])
-            self.y_test = keras.utils.to_categorical(self.y_test, self.layer_height[self.layers])
+            self.y_train = keras.utils.to_categorical(self.y_train, self.layer_height[self.layers]).astype('float32')
+            self.y_test = keras.utils.to_categorical(self.y_test, self.layer_height[self.layers]).astype('float32')
 
         self.correct_pred = 0
         self.wrong_pred = 0
+        self.loss = 0.0
 
     def aligned(self, a, alignment=16):
         if (a.ctypes.data % alignment) == 0:
@@ -156,9 +159,10 @@ class BaseEngine:
             else:
                 # Layer weights
                 self.weights[layer] = self.aligned(
-                    np.random.uniform(-0.01, 0.01, size=size_weights).astype(dtype=settings.NN_T), alignment=64)
-                self.bias[layer] = self.aligned(
-                    np.random.uniform(-0.01, 0.01, size=size_bias).astype(dtype=settings.NN_T), alignment=64)
+                    np.random.uniform(-1, 1, size=size_weights).astype(dtype=settings.NN_T), alignment=64)/size_weights[0]
+                #self.bias[layer] = self.aligned(
+                #    np.random.uniform(-0.01, 0.01, size=size_bias).astype(dtype=settings.NN_T), alignment=64)
+                self.bias[layer] = self.aligned(np.zeros(size_bias, settings.NN_T), alignment=64)
             # Temp buffer
             self.dW[layer] = self.aligned(np.zeros(size_weights, dtype=settings.NN_T), alignment=64)
             # Memory
@@ -190,6 +194,12 @@ class BaseEngine:
 
         self.ground_truth = self.aligned(ground_truth, alignment=64)
 
+    def shuffle_train_set(self):
+        rng_state = np.random.get_state()
+        np.random.shuffle(self.x_train)
+        np.random.set_state(rng_state)
+        np.random.shuffle(self.y_train)
+
     def set_train_input(self, batch):
         self.act[0] = self.aligned(self.x_train[batch * self.minibatch_size:(batch + 1) * self.minibatch_size, :],
                                    alignment=64)
@@ -207,11 +217,17 @@ class BaseEngine:
     def reset_accuracy(self):
         self.correct_pred = 0
         self.wrong_pred = 0
+        self.loss = 0.0
 
     def count_accuracy(self):
         prediction = np.argmax(self.act[self.layers], axis=1)
         ground_truth = np.argmax(self.ground_truth, axis=1)
 
+        #probs = self.act[self.layers]
+        #probs[probs == 0] = -1e-9
+        #self.loss += np.sum(np.divide(-self.ground_truth, probs))/self.testbatch_size
+        #loss = keras.losses.categorical_crossentropy(tf.convert_to_tensor(self.ground_truth,dtype=tf.float32), tf.convert_to_tensor(self.act[self.layers],dtype=tf.float32))
+        #print("Loss", loss)
         self.correct_pred += np.sum(prediction == ground_truth)
         self.wrong_pred += np.sum(prediction != ground_truth)
 
@@ -269,4 +285,5 @@ class BaseEngine:
                 return False
 
     def print_accuracy(self):
-        print("Engine Accuracy: {:.2%}".format(self.correct_pred / (self.correct_pred + self.wrong_pred)))
+
+        print("Engine Accuracy: {:.2%}; Loss: {:.4f}".format(self.correct_pred / (self.correct_pred + self.wrong_pred),self.loss))

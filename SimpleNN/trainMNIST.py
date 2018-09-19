@@ -14,14 +14,14 @@ import keras
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense
-from keras.optimizers import RMSprop
+from keras.optimizers import SGD
 
 import pickle
 import numpy
 
-batch_size = 128
+batch_size = 64
 num_classes = 10
-epochs = 10
+epochs = 20
 
 # the data, split between train and test sets
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
@@ -44,19 +44,19 @@ model.add(Dense(512, activation='relu', input_shape=(784,)))
 # model.add(Dropout(0.2))
 model.add(Dense(512, activation='relu'))
 # model.add(Dropout(0.2))
-model.add(Dense(num_classes, activation='softmax'))
+model.add(Dense(num_classes, activation='softmax', input_shape=(784,)))
 
 model.summary()
 
 model.compile(loss='categorical_crossentropy',
-              optimizer=RMSprop(),
+              optimizer=SGD(lr=0.001),
               metrics=['accuracy'])
 
-history = model.fit(x_train, y_train,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    verbose=1,
-                    validation_data=(x_test, y_test))
+# history = model.fit(x_train, y_train,
+#                     batch_size=batch_size,
+#                     epochs=epochs,
+#                     verbose=1,
+#                     validation_data=(x_test, y_test))
 score = model.evaluate(x_test, y_test, verbose=0)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])

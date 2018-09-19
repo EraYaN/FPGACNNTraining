@@ -5,6 +5,8 @@ import numpy as np
 import keras
 
 
+VERIFY = True
+
 def display_verify_result(res, name="Data"):
     total = len(res)
     correct = 0
@@ -20,66 +22,79 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    cpu_engine = tnnf.CPUEngine(set_verify_config=True)
+    cpu_engine = tnnf.CPUEngine(set_verify_config=False)
+    cpu_engine.create_buffers(pretrained=True)
 
-    fpga_engine = tnnf.FPGAEngine(args.kernel_file, set_verify_config=True)
+    if VERIFY:
+        fpga_engine = tnnf.FPGAEngine(args.kernel_file, set_verify_config=False)
+        fpga_engine.create_buffers(pretrained=True)
 
-    cpu_engine.create_buffers(pretrained=False)
-
-    fpga_engine.create_buffers(pretrained=False)
-
-    np.random.seed(0)
-    input_cpu = np.random.randint(1, 4, size=(cpu_engine.minibatch_size, cpu_engine.layer_height[0])).astype(
-        dtype=np.float32)
-    ground_truth_cpu = np.random.randint(0, cpu_engine.layer_height[cpu_engine.layers], size=cpu_engine.minibatch_size)
-    ground_truth_cpu = keras.utils.to_categorical(ground_truth_cpu, cpu_engine.layer_height[cpu_engine.layers]).astype(
-        dtype=np.float32)
-
-    cpu_engine.set_input(input_cpu, ground_truth_cpu)
-
-    fpga_engine.set_input(np.copy(input_cpu), np.copy(ground_truth_cpu))
+        # np.random.seed(0)
+        # input_cpu = np.random.randint(1, 4, size=(cpu_engine.minibatch_size, cpu_engine.layer_height[0])).astype(
+        #     dtype=np.float32)
+        # ground_truth_cpu = np.random.randint(0, cpu_engine.layer_height[cpu_engine.layers], size=cpu_engine.minibatch_size)
+        # ground_truth_cpu = keras.utils.to_categorical(ground_truth_cpu, cpu_engine.layer_height[cpu_engine.layers]).astype(
+        #     dtype=np.float32)
+        #
+        # cpu_engine.set_input(input_cpu, ground_truth_cpu)
+        #
+        # fpga_engine.set_input(np.copy(input_cpu), np.copy(ground_truth_cpu))
 
     print("Running CPU code...")
-    cpu_engine.fw_function()
-    cpu_engine.bw_function()
+    if VERIFY:
+        # cpu_engine.fw_function()
+        # cpu_engine.bw_function()
+        # cpu_engine.fw_function()
+        # cpu_engine.bw_function()
+        cpu_engine.test()
+        cpu_engine.train()
+    else:
+        cpu_engine.test()
+        cpu_engine.train()
 
-    print("Running FPGA code...")
-    fpga_engine.fw_function()
-    fpga_engine.bw_function()
+    if VERIFY:
+        print("Running FPGA code...")
+        # fpga_engine.fw_function()
+        # fpga_engine.bw_function()
+        # fpga_engine.fw_function()
+        # fpga_engine.bw_function()
+        fpga_engine.test()
+        fpga_engine.train()
 
-    print("Getting all device buffers...")
+        print("Getting all device buffers...")
 
-    fpga_engine.retrieve_buffers_from_device(all=True)
+        fpga_engine.retrieve_buffers_from_device(all=True)
 
-    fpga_engine.finish_device_queue()
+        fpga_engine.finish_device_queue()
 
-    print("Verifying...")
+        print("Verifying...")
 
-    dW_matches = {}
-    bias_matches = {}
-    weights_matches = {}
-    delta_matches = {}
-    act_matches = {}
+        dW_matches = {}
+        bias_matches = {}
+        weights_matches = {}
+        delta_matches = {}
+        act_matches = {}
 
-    for layer in range(0, fpga_engine.layers):
-        print("Verifying dW[{}]".format(layer))
-        dW_matches[layer] = fpga_engine.verify_dW(cpu_engine, layer=layer)
-        print("Verifying bias[{}]".format(layer))
-        bias_matches[layer] = fpga_engine.verify_bias(cpu_engine, layer=layer)
-        print("Verifying weights[{}]".format(layer))
-        weights_matches[layer] = fpga_engine.verify_weights(cpu_engine, layer=layer)
-        print("Verifying delta[{}]".format(layer))
-        delta_matches[layer] = fpga_engine.verify_delta(cpu_engine, layer=layer)
-        print("Verifying act[{}]".format(layer))
-        act_matches[layer] = fpga_engine.verify_act(cpu_engine, layer=layer)
+        for layer in range(0, fpga_engine.layers):
+            print("Verifying dW[{}]".format(layer))
+            dW_matches[layer] = fpga_engine.verify_dW(cpu_engine, layer=layer)
+            print("Verifying bias[{}]".format(layer))
+            bias_matches[layer] = fpga_engine.verify_bias(cpu_engine, layer=layer)
+            print("Verifying weights[{}]".format(layer))
+            weights_matches[layer] = fpga_engine.verify_weights(cpu_engine, layer=layer)
+            if layer > 0:
+                print("Verifying delta[{}]".format(layer))
+                delta_matches[layer] = fpga_engine.verify_delta(cpu_engine, layer=layer)
+            print("Verifying act[{}]".format(layer))
+            act_matches[layer] = fpga_engine.verify_act(cpu_engine, layer=layer)
 
-    print("Verifying delta[{}]".format(fpga_engine.layers))
-    delta_matches[fpga_engine.layers] = fpga_engine.verify_delta(cpu_engine, layer=fpga_engine.layers)
-    print("Verifying act[{}]".format(fpga_engine.layers))
-    act_matches[fpga_engine.layers] = fpga_engine.verify_act(cpu_engine, layer=fpga_engine.layers)
+        print("Verifying delta[{}]".format(fpga_engine.layers))
+        delta_matches[fpga_engine.layers] = fpga_engine.verify_delta(cpu_engine, layer=fpga_engine.layers)
+        print("Verifying act[{}]".format(fpga_engine.layers))
+        act_matches[fpga_engine.layers] = fpga_engine.verify_act(cpu_engine, layer=fpga_engine.layers)
 
-    display_verify_result(dW_matches, "dW")
-    display_verify_result(weights_matches, "weights")
-    display_verify_result(delta_matches, "delta")
-    display_verify_result(bias_matches, "bias")
-    display_verify_result(act_matches, "act")
+        display_verify_result(dW_matches, "dW")
+        display_verify_result(weights_matches, "weights")
+        display_verify_result(delta_matches, "delta")
+        display_verify_result(bias_matches, "bias")
+        display_verify_result(act_matches, "act")
