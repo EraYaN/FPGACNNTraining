@@ -16,7 +16,7 @@ class BaseEngine:
         self.testbatch_size = 128
         self.minibatch_size = 128
         self.epochs = 1
-        self.batch_limit = None
+        self.batch_limit = 2
 
         self.layer_height = [28 * 28, 512, 512, 10] # MNIST
         # self.layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10

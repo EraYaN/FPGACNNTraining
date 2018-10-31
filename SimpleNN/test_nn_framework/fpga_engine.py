@@ -95,35 +95,42 @@ class FPGAEngine(BaseEngine):
             rows_out = self.layer_height[layer + 1]
             is_last_layer = layer + 1 == self.layers
 
-            print("Running layer {} ({}->{}) kernel, with relu: {}".format(layer, rows_in, rows_out,
-                                                                           1 if not is_last_layer else 0))
+            #print("Running layer {} ({}->{}) kernel, with relu: {}".format(layer, rows_in, rows_out,
+                                                                           #1 if not is_last_layer else 0))
             self.kForward.set_args(self.act_buffers[layer], self.weights_buffers[layer], self.bias_buffers[layer],
                                    self.act_buffers[layer + 1],
                                    self.minibatch_size, rows_in, rows_out, 1 if not is_last_layer else 0)
             cl.enqueue_task(self.queue, self.kForward).wait()
 
             if is_last_layer:
-                print("Running layer {} softmax kernel".format(layer))
+                #print("Running layer {} softmax kernel".format(layer))
                 self.kForwardSoftMax.set_args(self.act_buffers[layer + 1],
                                               self.minibatch_size, rows_out)
                 cl.enqueue_task(self.queue, self.kForwardSoftMax).wait()
+                #print("Running layer {} softmax kernel. COMPLETED.".format(layer))
 
     def bw_function(self, benchmark=False):
         for layer in range(self.layers, -1, -1):
             rows_in = self.layer_height[layer]
             is_last_layer = layer == self.layers
             if is_last_layer:
+                print("Running layer {} first_delta kernel".format(layer))
                 self.kBackwardFirstDelta.set_args(self.act_buffers[layer], self.ground_truth_buffer,
                                                   self.delta_buffers[layer], self.minibatch_size,
                                                   self.layer_height[layer])
                 cl.enqueue_task(self.queue, self.kBackwardFirstDelta).wait()
+                print("Running layer {} first_delta kernel. COMPLETED".format(layer))
             else:
                 rows_out = self.layer_height[layer + 1]
+
+                print("Running layer {} backwards kernel".format(layer))
                 self.kBackward.set_args(self.act_buffers[layer], self.weights_buffers[layer], self.dW_buffers[layer],
                                         self.bias_buffers[layer], self.delta_buffers[layer],
                                         self.delta_buffers[layer + 1],
                                         self.learn_rate, self.minibatch_size, rows_in, rows_out)
                 cl.enqueue_task(self.queue, self.kBackward).wait()
+
+                print("Running layer {} backwards kernel. COMPLETED".format(layer))
 
     def train(self):
         batches = int(self.x_train.shape[0] / self.minibatch_size)
@@ -193,7 +200,7 @@ class FPGAEngine(BaseEngine):
     def send_buffers_to_device(self):
         mf = cl.mem_flags
 
-        print("Transferring all buffers to device...")
+        #print("Transferring all buffers to device...")
 
         for layer in range(0, self.layers):
             self.act_buffers[layer] = cl.Buffer(self.ctx, mf.COPY_HOST_PTR, hostbuf=self.act[layer])
@@ -214,8 +221,8 @@ class FPGAEngine(BaseEngine):
     def retrieve_buffers_from_device(self, benchmark=False, all=False):
         if all:
             for layer in range(0, self.layers):
-                if not benchmark:
-                    print("Transferring all values from device for layer {}...".format(layer))
+                #if not benchmark:
+                    #print("Transferring all values from device for layer {}...".format(layer))
                     # print(self.bias[layer],self.bias_buffers[layer])
                 cl.enqueue_copy(self.queue, self.weightsT[layer], self.weights_buffers[layer]).wait()
                 self.weights[layer] = self.weightsT[layer].T
@@ -227,8 +234,8 @@ class FPGAEngine(BaseEngine):
 
             cl.enqueue_copy(self.queue, self.delta[self.layers], self.delta_buffers[self.layers]).wait()
 
-        if not benchmark:
-            print("Transferring final result from device...")
+        #if not benchmark:
+            #print("Transferring final result from device...")
         cl.enqueue_copy(self.queue, self.act[self.layers], self.act_buffers[self.layers]).wait()
 
     def finish_device_queue(self):

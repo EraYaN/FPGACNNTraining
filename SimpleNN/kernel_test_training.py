@@ -46,10 +46,10 @@ if __name__ == "__main__":
         # cpu_engine.bw_function()
         # cpu_engine.fw_function()
         # cpu_engine.bw_function()
-        cpu_engine.test()
+        #cpu_engine.test()
         cpu_engine.train()
     else:
-        cpu_engine.test()
+        #cpu_engine.test()
         cpu_engine.train()
 
     if VERIFY:
@@ -58,7 +58,7 @@ if __name__ == "__main__":
         # fpga_engine.bw_function()
         # fpga_engine.fw_function()
         # fpga_engine.bw_function()
-        fpga_engine.test()
+        #fpga_engine.test()
         fpga_engine.train()
 
         print("Getting all device buffers...")

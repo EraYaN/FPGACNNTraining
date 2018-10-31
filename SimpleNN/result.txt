@@ -1,0 +1,14 @@
+kernels/kernel_nn_blocking_write_BS64_fp_relaxed_hw_2018_06_22T16_14_25.aocx; 18.6 GFLOPS; 28*28 down to 128 with batchsize 128
+kernels/kernel_nn_blocking_write_BS64_hw_2018_06_22T16_19_06.aocx; 16.7 GFLOPS; 28*28 down to 128 with batchsize 128
+kernels/kernel_nn_blocking_BS64_O3_hw_2018-06-22T21.23.47.aocx; 16.7 GFLOPS; 28*28 down to 128 with batchsize 128
+kernels/kernel_nn_blocking_BS64-fpr-O3_hw_2018-06-22T22.17.58.aocx; 18.6 GFLOPS; 28*28 down to 128 with batchsize 128
+
+In order (Host 32-45 GFLOPS)
+kernels/kernel_nn_blocking_B128inorder_hw_2018-06-28T22.53.27.aocx; ?? GFLOPS; 28*28 down to 128 with batchsize 10000
+kernels/kernel_nn_blocking_B100inorder_hw_2018-06-28T22.52.27.aocx; ?? GFLOPS; 28*28 down to 128 with batchsize 10000
+kernels/kernel_nn_blocking_B86inorder_hw_2018-06-28T22.52.27.aocx; ?? GFLOPS; 28*28 down to 128 with batchsize 10000
+kernels/kernel_nn_blocking_B84inorder_hw_2018-06-28T22.52.27.aocx; ?? GFLOPS; 28*28 down to 128 with batchsize 10000
+kernels/kernel_nn_blocking_B64inorder_hw_2018-06-28T22.52.27.aocx; 14.3 GFLOPS; 28*28 down to 128 with batchsize 10000
+kernels/kernel_nn_blocking_B32inorder_hw_2018-06-28T22.53.27.aocx; ?? GFLOPS; 28*28 down to 128 with batchsize 10000
+kernels/kernel_nn_blocking_B16inorder_hw_2018-06-28T22.53.27.aocx; 4.1 GFLOPS; 28*28 down to 128 with batchsize 10000
+
