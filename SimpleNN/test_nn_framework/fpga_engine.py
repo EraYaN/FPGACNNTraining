@@ -78,6 +78,7 @@ class FPGAEngine(BaseEngine):
 
     def findPlatform(self, strname):
         platforms = cl.get_platforms()
+        print(platforms)
         for platform in platforms:
             if settings.VENDOR_NAME in platform.get_info(cl.platform_info.NAME).lower():
                 return platform

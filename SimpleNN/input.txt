@@ -1,0 +1,11 @@
+0 0 61 74; Main Region
+107 0 116 2; PR Block
+71 32 78 44; DDD4_P3 arch and pipe stage island
+68 60 78 72; DDD4_P3 arch and pipe stage island
+71 87 78 99; DDD4_P3 arch and pipe stage island
+71 141 78 152; DDD4_P2 arch and pipe stage island
+68 168 78 185; DDD4_P2 arch and pipe stage island
+71 195 78 207; DDD4_P2 arch and pipe stage island
+34 140 39 154; DDR4_P2 Pipe stage island #2
+70 5 78 17; System Manager
+0 75 23 130; Region for Serial Channels & DDR4_P2 Pipe stage island #1

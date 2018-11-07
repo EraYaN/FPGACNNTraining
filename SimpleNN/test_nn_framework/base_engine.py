@@ -42,8 +42,8 @@ class BaseEngine:
             num_classes = 2
 
             self.LAYER_FILENAME = "verify_{0}x{0}_{{0}}.p".format(section_size)
-            self.testbatch_size = 20
-            self.minibatch_size = 20
+            self.testbatch_size = 5
+            self.minibatch_size = 5
             self.epochs = 1
 
             self.layer_height = [section_size**2, 4, 2]  # verify sizes
