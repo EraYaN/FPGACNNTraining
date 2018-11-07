@@ -43,16 +43,22 @@ if __name__ == "__main__":
 
     print("Running CPU code...")
     cpu_engine.train()
+    cpu_engine.set_train_input(0)
+    #print(cpu_engine.act[0][0])
+    cpu_engine.fw_function()
+    
 
     if RUN_ON_DEVICE:
         print("Running FPGA code...")
-        # fpga_engine.fw_function()
+        
         # fpga_engine.bw_function()
         # fpga_engine.fw_function()
         # fpga_engine.bw_function()
         #fpga_engine.test()
         fpga_engine.train()
-
+        fpga_engine.set_train_input(0)
+        #print(fpga_engine.act[0][0])
+        fpga_engine.fw_function()
         print("Getting all device buffers...")
 
         fpga_engine.retrieve_buffers_from_device(all=True)
@@ -86,7 +92,7 @@ if __name__ == "__main__":
         act_matches[fpga_engine.layers] = fpga_engine.verify_act(cpu_engine, layer=fpga_engine.layers)
 
         display_verify_result(dW_matches, "dW")
+        display_verify_result(bias_matches, "bias")
         display_verify_result(weights_matches, "weights")
         display_verify_result(delta_matches, "delta")
-        display_verify_result(bias_matches, "bias")
         display_verify_result(act_matches, "act")

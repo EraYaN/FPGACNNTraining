@@ -106,12 +106,12 @@ class CPUEngine(BaseEngine):
             batches = self.batch_limit
         #batches = 20
         print("Training with {} batches of size {}".format(batches, self.minibatch_size))
+
         for epoch in range(0, self.epochs):
             print("Epoch {} of {}...".format(epoch+1, self.epochs))
             #self.shuffle_train_set()
             for batch in range(0, batches):
                 self.set_train_input(batch)
-                #print("input",self.act[0][0])
 
                 self.fw_function()
                 #print("after fw act2 nz", np.count_nonzero(self.act[2]))

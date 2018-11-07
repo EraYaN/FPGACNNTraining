@@ -72,7 +72,7 @@ class FPGAEngine(BaseEngine):
         self.kForwardSoftMax.set_scalar_arg_dtypes([None, np.int32, np.int32])
         self.kBackwardFirstDelta.set_scalar_arg_dtypes([None, None, None, np.int32, np.int32])
         self.kBackward.set_scalar_arg_dtypes(
-            [None, None, None, None, None, None, settings.NN_T, np.int32, np.int32, np.int32])
+            [None, None, None, None, None, None, settings.NN_T, np.int32, np.int32, np.int32, np.int32])
 
         self.queue = cl.CommandQueue(self.ctx)
 
@@ -115,23 +115,23 @@ class FPGAEngine(BaseEngine):
             rows_in = self.layer_height[layer]
             is_last_layer = layer == self.layers
             if is_last_layer:
-                print("Running layer {} first_delta kernel".format(layer))
+                #print("Running layer {} first_delta kernel".format(layer))
                 self.kBackwardFirstDelta.set_args(self.act_buffers[layer], self.ground_truth_buffer,
                                                   self.delta_buffers[layer], self.minibatch_size,
                                                   self.layer_height[layer])
                 cl.enqueue_task(self.queue, self.kBackwardFirstDelta).wait()
-                print("Running layer {} first_delta kernel. COMPLETED".format(layer))
+                #print("Running layer {} first_delta kernel. COMPLETED".format(layer))
             else:
                 rows_out = self.layer_height[layer + 1]
 
-                print("Running layer {} backwards kernel".format(layer))
+                #print("Running layer {} backwards kernel".format(layer))
                 self.kBackward.set_args(self.act_buffers[layer], self.weights_buffers[layer], self.dW_buffers[layer],
                                         self.bias_buffers[layer], self.delta_buffers[layer],
                                         self.delta_buffers[layer + 1],
-                                        self.learn_rate, self.minibatch_size, rows_in, rows_out)
+                                        self.learn_rate, self.minibatch_size, rows_in, rows_out, layer)
                 cl.enqueue_task(self.queue, self.kBackward).wait()
 
-                print("Running layer {} backwards kernel. COMPLETED".format(layer))
+                #print("Running layer {} backwards kernel. COMPLETED".format(layer))
 
     def train(self):
         batches = int(self.x_train.shape[0] / self.minibatch_size)
@@ -142,10 +142,10 @@ class FPGAEngine(BaseEngine):
 
         for epoch in range(0, self.epochs):
             print("Epoch {} of {}...".format(epoch + 1, self.epochs))
-            self.shuffle_train_set()
+            #self.shuffle_train_set()
             for batch in range(0, batches):
                 self.set_train_input(batch)
-
+                
                 self.fw_function()
 
                 self.bw_function()
@@ -189,12 +189,10 @@ class FPGAEngine(BaseEngine):
 
     def set_train_input(self, batch):
         super(FPGAEngine, self).set_train_input(batch)
-
         cl.enqueue_copy(self.queue, self.act_buffers[0], self.act[0]).wait()
         cl.enqueue_copy(self.queue, self.ground_truth_buffer, self.ground_truth).wait()
 
     def set_test_input(self, batch):
-
         super(FPGAEngine, self).set_test_input(batch)
         cl.enqueue_copy(self.queue, self.act_buffers[0], self.act[0]).wait()
         cl.enqueue_copy(self.queue, self.ground_truth_buffer, self.ground_truth).wait()

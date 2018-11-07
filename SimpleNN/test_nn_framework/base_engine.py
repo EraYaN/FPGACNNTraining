@@ -15,8 +15,8 @@ class BaseEngine:
         self.LAYER_FILENAME = "layer_mnist_{0}.p"
         self.testbatch_size = 128
         self.minibatch_size = 128
-        self.epochs = 1
-        self.batch_limit = 2
+        self.epochs = 10
+        self.batch_limit = 100
 
         self.layer_height = [28 * 28, 512, 256, 10] # MNIST
         # self.layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
@@ -24,7 +24,7 @@ class BaseEngine:
         self.layers = len(self.layer_height) - 1
         self.hidden_layers = len(self.layer_height) - 2
 
-        self.learn_rate = 0.01
+        self.learn_rate = 0.001
         self.regulation_strength = 0.002
 
         self.act = {}
@@ -42,9 +42,8 @@ class BaseEngine:
             num_classes = 2
 
             self.LAYER_FILENAME = "verify_{0}x{0}_{{0}}.p".format(section_size)
-            self.testbatch_size = 5
-            self.minibatch_size = 5
-            self.epochs = 1
+            self.testbatch_size = 16
+            self.minibatch_size = 16
 
             self.layer_height = [section_size**2, 4, 2]  # verify sizes
 
@@ -61,7 +60,7 @@ class BaseEngine:
             
             # the data, split between train and test sets
             (self.x_train, self.y_train), (self.x_test, self.y_test) = input_data.load_data()
-
+          
             midpoint = self.x_train.shape[1]/2
             start = int(midpoint-section_size/2)
             end = int(start+section_size)
@@ -75,7 +74,12 @@ class BaseEngine:
             test_filter = np.where((self.y_test < num_classes))
 
             self.x_train, self.y_train = self.x_train[train_filter], self.y_train[train_filter]
-            self.x_test, self.y_test = self.x_test[test_filter], self.y_test[test_filter]
+            self.x_test, self.y_test = self.x_test[test_filter], self.y_test[test_filter]     
+
+            # self.x_train = self.x_train[:5,:,:]
+            # self.y_train = self.y_train[:5]
+            # self.x_test = self.x_test[:5,:,:]
+            # self.y_test = self.y_test[:5]      
 
         else:
             print("Loading data...")
@@ -83,16 +87,16 @@ class BaseEngine:
 
         self.y_train = self.y_train.reshape((self.y_train.shape[0],))
         self.x_train = self.x_train.reshape(self.x_train.shape[0], self.layer_height[0])
-        self.x_train = self.x_train.astype('float32')
+        self.x_train = self.x_train.astype(settings.NN_T)
         self.x_train /= 255
 
         self.y_test = self.y_test.reshape((self.y_test.shape[0],))
         self.x_test = self.x_test.reshape(self.x_test.shape[0], self.layer_height[0])
-        self.x_test = self.x_test.astype('float32')
+        self.x_test = self.x_test.astype(settings.NN_T)
         self.x_test /= 255
 
-        self.y_train = keras.utils.to_categorical(self.y_train, self.layer_height[self.layers]).astype('float32')
-        self.y_test = keras.utils.to_categorical(self.y_test, self.layer_height[self.layers]).astype('float32')
+        self.y_train = keras.utils.to_categorical(self.y_train, self.layer_height[self.layers]).astype(settings.NN_T)
+        self.y_test = keras.utils.to_categorical(self.y_test, self.layer_height[self.layers]).astype(settings.NN_T)
 
         self.correct_pred = 0
         self.wrong_pred = 0

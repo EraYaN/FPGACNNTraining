@@ -30,7 +30,7 @@ class FPGATest:
     layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
 
     learn_rate = 0.005
-    regulation_strength = 0.002
+    regulation_strength = 0.0
 
     act = {}
     act_cpu = {}
