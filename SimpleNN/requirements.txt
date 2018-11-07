@@ -3,3 +3,5 @@ matplotlib
 pyopencl
 keras
 tensorflow
+plaidml
+plaidml-keras

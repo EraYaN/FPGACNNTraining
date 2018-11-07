@@ -18,7 +18,7 @@ class BaseEngine:
         self.epochs = 1
         self.batch_limit = 2
 
-        self.layer_height = [28 * 28, 512, 512, 10] # MNIST
+        self.layer_height = [28 * 28, 512, 256, 10] # MNIST
         # self.layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
 
         self.layers = len(self.layer_height) - 1
@@ -36,12 +36,17 @@ class BaseEngine:
         self.ground_truth = None
 
         if set_verify_config:
-            self.LAYER_FILENAME = "verify_{0}.p"
-            self.testbatch_size = 32
-            self.minibatch_size = 32
-            self.epochs = 100
+            print("Running with verification data set.")
 
-            self.layer_height = [100, 32, 16, 8, 2]  # verify sizes
+            section_size = 3
+            num_classes = 2
+
+            self.LAYER_FILENAME = "verify_{0}x{0}_{{0}}.p".format(section_size)
+            self.testbatch_size = 20
+            self.minibatch_size = 20
+            self.epochs = 1
+
+            self.layer_height = [section_size**2, 4, 2]  # verify sizes
 
             self.layers = len(self.layer_height) - 1
             self.hidden_layers = len(self.layer_height) - 2
@@ -52,30 +57,42 @@ class BaseEngine:
 
         print("Running with {} hidden layers and {} layers total.".format(self.hidden_layers, self.layers))
         if set_verify_config:
-            print("Generating fake data...")
+            print("Generating verification data...")  
+            
+            # the data, split between train and test sets
+            (self.x_train, self.y_train), (self.x_test, self.y_test) = input_data.load_data()
 
-            self.y_test = np.zeros((self.minibatch_size,), dtype=settings.NN_T)
-            self.x_test = np.zeros((self.minibatch_size, self.layer_height[0]), dtype=settings.NN_T)
+            midpoint = self.x_train.shape[1]/2
+            start = int(midpoint-section_size/2)
+            end = int(start+section_size)
 
-            self.y_train = np.zeros((self.minibatch_size, self.layer_height[self.layers]), dtype=settings.NN_T)
-            self.x_train = np.zeros((self.testbatch_size, self.layer_height[self.layers]), dtype=settings.NN_T)
+            print("Taking inner {0}x{0} section (from {1} to {2}) for {3} inputs.".format(section_size,start,end,section_size**2))
+
+            self.x_train = self.x_train[:,start:end,start:end]
+            self.x_test = self.x_test[:,start:end,start:end]
+
+            train_filter = np.where((self.y_train < num_classes))
+            test_filter = np.where((self.y_test < num_classes))
+
+            self.x_train, self.y_train = self.x_train[train_filter], self.y_train[train_filter]
+            self.x_test, self.y_test = self.x_test[test_filter], self.y_test[test_filter]
 
         else:
             print("Loading data...")
             (self.x_train, self.y_train), (self.x_test, self.y_test) = input_data.load_data()
 
-            self.y_train = self.y_train.reshape((self.y_train.shape[0],))
-            self.x_train = self.x_train.reshape(self.x_train.shape[0], self.layer_height[0])
-            self.x_train = self.x_train.astype('float32')
-            self.x_train /= 255
+        self.y_train = self.y_train.reshape((self.y_train.shape[0],))
+        self.x_train = self.x_train.reshape(self.x_train.shape[0], self.layer_height[0])
+        self.x_train = self.x_train.astype('float32')
+        self.x_train /= 255
 
-            self.y_test = self.y_test.reshape((self.y_test.shape[0],))
-            self.x_test = self.x_test.reshape(self.x_test.shape[0], self.layer_height[0])
-            self.x_test = self.x_test.astype('float32')
-            self.x_test /= 255
+        self.y_test = self.y_test.reshape((self.y_test.shape[0],))
+        self.x_test = self.x_test.reshape(self.x_test.shape[0], self.layer_height[0])
+        self.x_test = self.x_test.astype('float32')
+        self.x_test /= 255
 
-            self.y_train = keras.utils.to_categorical(self.y_train, self.layer_height[self.layers]).astype('float32')
-            self.y_test = keras.utils.to_categorical(self.y_test, self.layer_height[self.layers]).astype('float32')
+        self.y_train = keras.utils.to_categorical(self.y_train, self.layer_height[self.layers]).astype('float32')
+        self.y_test = keras.utils.to_categorical(self.y_test, self.layer_height[self.layers]).astype('float32')
 
         self.correct_pred = 0
         self.wrong_pred = 0

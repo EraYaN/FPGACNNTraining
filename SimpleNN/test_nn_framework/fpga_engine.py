@@ -155,7 +155,8 @@ class FPGAEngine(BaseEngine):
 
     def test(self):
         batches = int(self.x_test.shape[0] / self.testbatch_size)
-
+        if self.batch_limit is not None:
+            batches = self.batch_limit
         print("Running {} batches on FPGA...".format(batches))
         fpga_time = 0.0
 

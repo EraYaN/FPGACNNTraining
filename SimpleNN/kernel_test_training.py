@@ -5,6 +5,7 @@ import numpy as np
 import keras
 
 
+RUN_ON_DEVICE = True
 VERIFY = True
 
 def display_verify_result(res, name="Data"):
@@ -22,11 +23,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    cpu_engine = tnnf.CPUEngine(set_verify_config=False)
+    cpu_engine = tnnf.CPUEngine(set_verify_config=VERIFY)
     cpu_engine.create_buffers(pretrained=True)
 
-    if VERIFY:
-        fpga_engine = tnnf.FPGAEngine(args.kernel_file, set_verify_config=False)
+    if RUN_ON_DEVICE:
+        fpga_engine = tnnf.FPGAEngine(args.kernel_file, set_verify_config=VERIFY)
         fpga_engine.create_buffers(pretrained=True)
 
         # np.random.seed(0)
@@ -41,18 +42,9 @@ if __name__ == "__main__":
         # fpga_engine.set_input(np.copy(input_cpu), np.copy(ground_truth_cpu))
 
     print("Running CPU code...")
-    if VERIFY:
-        # cpu_engine.fw_function()
-        # cpu_engine.bw_function()
-        # cpu_engine.fw_function()
-        # cpu_engine.bw_function()
-        #cpu_engine.test()
-        cpu_engine.train()
-    else:
-        #cpu_engine.test()
-        cpu_engine.train()
+    cpu_engine.train()
 
-    if VERIFY:
+    if RUN_ON_DEVICE:
         print("Running FPGA code...")
         # fpga_engine.fw_function()
         # fpga_engine.bw_function()
