@@ -139,20 +139,25 @@ class FPGAEngine(BaseEngine):
             batches = self.batch_limit
         # batches = 20
         print("Training with {} batches of size {}".format(batches, self.minibatch_size))
+        fpga_time = 0.0
 
         for epoch in range(0, self.epochs):
             print("Epoch {} of {}...".format(epoch + 1, self.epochs))
             #self.shuffle_train_set()
             for batch in range(0, batches):
                 self.set_train_input(batch)
-                
+
+                start_time = time.time()
                 self.fw_function()
 
                 self.bw_function()
+                fpga_time += time.time() - start_time
 
                 sys.stdout.write("Batch {} of {} complete.\r".format(batch + 1, batches))
             print("Epoch {} of {} is complete.".format(epoch + 1, self.epochs))
             self.test()
+
+        return fpga_time
 
     def test(self):
         batches = int(self.x_test.shape[0] / self.testbatch_size)

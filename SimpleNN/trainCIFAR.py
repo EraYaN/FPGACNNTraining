@@ -14,7 +14,8 @@ plaidml.keras.install_backend()
 import keras
 from keras.datasets import cifar10
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
+from keras.layers import Dense
+from keras.optimizers import SGD
 
 import pickle
 import numpy
@@ -40,29 +41,25 @@ y_train = keras.utils.to_categorical(y_train, num_classes)
 y_test = keras.utils.to_categorical(y_test, num_classes)
 
 model = Sequential()
-model.add(Dense(1024, input_shape=(32 * 32 * 3,)))
-model.add(Activation('relu'))
+model.add(Dense(1024, activation='relu', input_shape=(32 * 32 * 3,)))
 
-model.add(Dense(512))
-model.add(Activation('relu'))
+model.add(Dense(512, activation='relu'))
 
-model.add(Dense(512))
-model.add(Activation('relu'))
+model.add(Dense(512, activation='relu'))
 
-model.add(Dense(num_classes))
-model.add(Activation('softmax'))
+model.add(Dense(num_classes, activation='softmax', input_shape=(32 * 32 * 3,)))
 
 model.compile(loss='categorical_crossentropy',
-              optimizer='adam',
+              optimizer=SGD(lr=0.001),
               metrics=['accuracy'])
 
 model.summary()
 
-history = model.fit(x_train, y_train,
-                    batch_size=batch_size,
-                    epochs=epochs,
-                    verbose=1,
-                    validation_data=(x_test, y_test))
+# history = model.fit(x_train, y_train,
+#                     batch_size=batch_size,
+#                     epochs=epochs,
+#                     verbose=1,
+#                     validation_data=(x_test, y_test))
 score = model.evaluate(x_test, y_test, verbose=0)
 print('Test loss:', score[0])
 print('Test accuracy:', score[1])

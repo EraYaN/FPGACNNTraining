@@ -1,7 +1,7 @@
 typedef float nn_t; //main type used
 
 //#define DEBUG 1
-#define BLOCK_SIZE 4
+#define BLOCK_SIZE 16
 #define BLOCK_MEM (BLOCK_SIZE * BLOCK_SIZE)
 
 #ifdef AOCL_BOARD_p510t_sch_ax115
@@ -296,52 +296,52 @@ __kernel void backward(global nn_t *restrict activations, global nn_t *restrict 
 
 }
 
-void gemm_nn_sr(int M, int N, int K, nn_t ALPHA, 
-        __global nn_t *restrict A, int lda, 
-        __global nn_t *restrict B, int ldb,
-        __global nn_t *restrict C, int ldc)
-{
-    int i,j,k;
-    double shift_reg[II_CYCLES];
+// void gemm_nn_sr(int M, int N, int K, nn_t ALPHA, 
+//         __global nn_t *restrict A, int lda, 
+//         __global nn_t *restrict B, int ldb,
+//         __global nn_t *restrict C, int ldc)
+// {
+//     int i,j,k;
+//     double shift_reg[II_CYCLES];
     
-    for(k = 0; k < K; ++k){
-        for(i = 0; i < M; ++i){
-            nn_t A_PART;
-            A_PART = ALPHA*A[i*lda+k];
+//     for(k = 0; k < K; ++k){
+//         for(i = 0; i < M; ++i){
+//             nn_t A_PART;
+//             A_PART = ALPHA*A[i*lda+k];
 
-            #pragma unroll
-            for (int l = 0; l < II_CYCLES; l++)
-            {
-                shift_reg[l] = 0;
-            }
+//             #pragma unroll
+//             for (int l = 0; l < II_CYCLES; l++)
+//             {
+//                 shift_reg[l] = 0;
+//             }
 
-            //Iterate through every element of input array
-            for(int j = 0; j < K; ++k)
-            {
-                //Load ith element into end of shift register
-                //if N > II_CYCLE, add to shift_reg[0] to preserve values
-                shift_reg[II_CYCLES-1] = shift_reg[0] + A_PART * B[k*ldb+j];
-                #pragma unroll
-                //Shift every element of shift register
-                for(int j = 0; j < II_CYCLES; ++j)
-                {
-                    shift_reg[j] = shift_reg[j + 1];
-                    //printf("shift_reg[%d] = %f\n",j, shift_reg[j]);
-                }
-            }
-            float temp_sum = 0;
+//             //Iterate through every element of input array
+//             for(int j = 0; j < K; ++k)
+//             {
+//                 //Load ith element into end of shift register
+//                 //if N > II_CYCLE, add to shift_reg[0] to preserve values
+//                 shift_reg[II_CYCLES-1] = shift_reg[0] + A_PART * B[k*ldb+j];
+//                 #pragma unroll
+//                 //Shift every element of shift register
+//                 for(int j = 0; j < II_CYCLES; ++j)
+//                 {
+//                     shift_reg[j] = shift_reg[j + 1];
+//                     //printf("shift_reg[%d] = %f\n",j, shift_reg[j]);
+//                 }
+//             }
+//             float temp_sum = 0;
 
-            #pragma unroll
-            for(int l = 0; l < II_CYCLES; ++l)
-            {
-                temp_sum += shift_reg[l];
-            }
+//             #pragma unroll
+//             for(int l = 0; l < II_CYCLES; ++l)
+//             {
+//                 temp_sum += shift_reg[l];
+//             }
 
-            //write back result
-            C[i*ldc+j] = temp_sum;
-        }
-    }
-}
+//             //write back result
+//             C[i*ldc+j] = temp_sum;
+//         }
+//     }
+// }
 
 void gemm_nn(int M, int N, int K, nn_t ALPHA, 
         __global nn_t *restrict A, int lda, 

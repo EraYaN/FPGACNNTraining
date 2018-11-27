@@ -1,0 +1,113 @@
+% Include all project wide packages here.
+%\usepackage{fullpage}
+\usepackage[a4paper]{geometry}
+\usepackage{polyglossia}
+\setmainlanguage{english}
+\usepackage{csquotes}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage[list=true]{subcaption}
+\usepackage{float}
+\usepackage{import}
+\usepackage{wrapfig}
+\usepackage{authblk}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{fontspec}
+\usepackage{pgfplots}
+\usepackage{tikz}
+\usepackage[binary-units=true,quotient-mode=fraction,table-auto-round]{siunitx}
+\usepackage{units}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{unicode-math}
+\usepackage{rotating}
+\usepackage{blindtext}
+\usepackage{color}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage[final]{microtype}
+
+\usetikzlibrary{matrix}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{calc}
+\usetikzlibrary{positioning}
+\usetikzlibrary{automata}
+\usetikzlibrary{arrows.meta}
+
+\pgfplotsset{compat=newest}
+\pgfplotsset{plot coordinates/math parser=false}
+\usetikzlibrary{plotmarks}
+\usepgfplotslibrary{patchplots}
+\newlength\figureheight
+\newlength\figurewidth
+\newlength\bytewidth
+\newlength\byteheight
+\setlength\bytewidth{1cm}
+\setlength\byteheight{6ex}
+
+\tikzset{every axis/.style={xticklabel style={align=right}}}
+
+\tikzstyle{every state}=[fill=tu-cyan,align=center,draw=black,line width=1pt,node distance=3cm,minimum width = 1.8cm]%for FSMs casper
+\tikzstyle{every initial by arrow}=[initial text={Reset}]
+\newcommand{\setpathasarrows}{\tikzstyle{every path}=[auto,line width=1.5pt,line cap=round,line join=round]}
+\tikzstyle{pijl}=[->,line width=1.5pt,line cap=round,line join=round]
+
+%TODO fix black diamond in decision center
+\tikzset{%for flow charts casper
+    treenode/.style = {shape=rectangle,
+                        draw=black,anchor=center,
+                        fill=blue!20,align=center,
+                        line width=1pt,
+                        text centered
+                        %inner sep=1ex},
+                        },
+    start/.style = {treenode, circle, inner sep=0pt,minimum width=1.5cm},
+    decision/.style = {treenode, diamond,text badly centered,inner sep=0pt,minimum width = 1.8cm,text width=4cm,aspect=4},
+    action/.style   = {treenode,        align=center,minimum width = 3.75cm,text width=3cm},
+    action_wide/.style   = {treenode,        align=center,minimum width = 1.8cm,text width=4cm},
+    statedashed/.style={state,circle,dashed,draw=black,fill=none},
+    goto/.style = {treenode,isosceles triangle,align=center,text width=3cm},
+    hidden/.style = {treenode,coordinate,fill=none,anchor=center,minimum width = 0.5cm},
+    line_custom/.style = {-,thick,auto,draw=black,line width=1.5pt},
+    >={Latex[width=3mm,length=3mm]}
+}
+
+\tikzstyle{byte}=[draw, fill=blue!20, minimum width=6cm,line width=0.4pt,node distance=-0.4pt, minimum height=\byteheight,text width=6cm,font={\fontsize{9pt}{0}\selectfont}]
+\tikzstyle{data}=[byte, fill=red!20]
+\tikzstyle{padding}=[byte, fill=green!20]
+\tikzstyle{byte_small}=[draw, fill=blue!20, minimum width=1.5cm,line width=0.4pt,node distance=-0.4pt, minimum height=\byteheight,text width=1.5cm]
+\tikzstyle{data_small}=[byte_small, fill=red!20]
+
+\usepackage[
+%backend=bibtex,
+backend=biber,
+	texencoding=utf8,
+bibencoding=utf8,
+style=numeric,
+citestyle=numeric,
+    sortlocale=en_US,
+    language=auto,
+    backref=true,
+    abbreviate=false,
+    seconds=true,
+    date=iso,
+    urldate=iso
+]{biblatex}
+
+
+\usepackage{listings}
+\newcommand{\includecode}[4][c]{\lstinputlisting[caption=#2, escapechar=, style=#1,label=#4]{#3}}
+\newcommand{\superscript}[1]{\ensuremath{^{\textrm{#1}}}}
+\newcommand{\subscript}[1]{\ensuremath{_{\textrm{#1}}}}
+
+
+\setlist[enumerate]{labelsep=*, leftmargin=1.5pc}
+\setlist[enumerate,1]{label=\arabic*., ref=\arabic*}
+\setlist[enumerate,2]{label=\arabic*.,ref=\theenumi.\arabic*}
+\setlist[enumerate,3]{label=\arabic*., ref=\theenumii.\arabic*}
+
+%\setcounter{chapter}{-1} %start chapter numbers with 0
+
+\usepackage[hidelinks]{hyperref} %<--------ALTIJD ALS LAATSTE
+\usepackage[nameinlink,noabbrev,capitalise]{cleveref} %<------- Clever Ref moet na hyperref

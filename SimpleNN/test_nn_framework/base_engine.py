@@ -1,7 +1,8 @@
 import numpy as np
 import tensorflow as tf
 import keras
-from keras.datasets import mnist as input_data
+#from keras.datasets import mnist as input_data
+from keras.datasets import cifar10 as input_data
 import pickle
 import sys
 
@@ -12,14 +13,14 @@ class BaseEngine:
 
     def __init__(self, set_verify_config=False):
 
-        self.LAYER_FILENAME = "layer_mnist_{0}.p"
+        self.LAYER_FILENAME = "layer_cifar_{0}.p"
         self.testbatch_size = 128
         self.minibatch_size = 128
         self.epochs = 10
-        self.batch_limit = 100
+        self.batch_limit = 10
 
-        self.layer_height = [28 * 28, 512, 256, 10] # MNIST
-        # self.layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
+        #self.layer_height = [28 * 28, 512, 512, 10] # MNIST
+        self.layer_height = [32 * 32 * 3, 1024, 512, 512, 10]  # CIFAR-10
 
         self.layers = len(self.layer_height) - 1
         self.hidden_layers = len(self.layer_height) - 2
@@ -35,11 +36,11 @@ class BaseEngine:
 
         self.ground_truth = None
 
+        section_size = 3
+        num_classes = 2
+
         if set_verify_config:
             print("Running with verification data set.")
-
-            section_size = 3
-            num_classes = 2
 
             self.LAYER_FILENAME = "verify_{0}x{0}_{{0}}.p".format(section_size)
             self.testbatch_size = 16
@@ -138,6 +139,7 @@ class BaseEngine:
     def get_trainops(self):
         # Bias additions and broadcast plus matrix mult.
         ops = 0
+        # Forward
         for layer in range(0, self.layers):
             rows_in = self.layer_height[layer]
             rows_out = self.layer_height[layer + 1]
@@ -145,6 +147,30 @@ class BaseEngine:
 
         # Final softmax
         ops += self.layer_height[self.layers] * (4 + 100) + 1
+
+        # First delta
+        ops += self.layer_height[self.layers] * self.minibatch_size * 2 + 1
+
+        # Backward
+        for layer in range(0, self.layers):
+            rows_in = self.layer_height[layer]
+            rows_out = self.layer_height[layer + 1]
+            # Bias
+            ops += rows_out * self.minibatch_size * 2
+
+            # Delta next
+            if layer > 0:
+                # Delta Matrix
+                ops += (2*rows_out-1)*self.minibatch_size*rows_in
+                # Relu derivative
+                ops += rows_in * self.minibatch_size
+
+            # dW Matrix
+            ops += (2*self.minibatch_size - 1)*rows_out*rows_in
+
+            # Weight
+            ops += rows_in * rows_out * 2
+
         print("Total train operations: {0} billion per batch.".format(ops / 1e9))
         return ops
 
