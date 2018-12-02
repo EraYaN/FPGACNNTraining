@@ -55,17 +55,17 @@
 \setcounter{number}{1}
 \setcounter{page}{1}
 
-\usepackage[varg]{txfonts}%%!!
-\makeatletter%
-\input{ot1txtt.fd}
-\makeatother%
+%\usepackage[varg]{txfonts}%%!!
+%\makeatletter%
+%\input{ot1txtt.fd}
+%\makeatother%
 
 \usepackage[hidelinks]{hyperref}
 \usepackage[nameinlink,capitalise]{cleveref}
 
 \begin{document}
 
-\title{Towards Accelerating Deep Neural Network Training on FPGAs: Facilitating the Use of Variable Precision\\ \Large{(Unrefereed Workshop Manuscript)} \\ \large{This version is amended from it's original version submitted to SWoPP 2018}}
+\title{Towards Accelerating Deep Neural Network Training on FPGAs: Facilitating the Use of Variable Precision\\ \Large{(Unrefereed Workshop Manuscript)} \\ \large{This version is amended from its original version submitted to SWoPP 2018}}
 \affiliate{TiTech}{Tokyo Institute of Technology, 
 Meguro-ku, Tokyo 152--8550, Japan}
 \affiliate{TUDelft}{Delft University of Technology, Mekelweg 2, 2628 CD Delft, Netherlands}
@@ -103,7 +103,7 @@ Several alternatives to the IEEE-754 format are indeed emerging, such as Microso
 
 However, exploring the space around IEEE-754 floating-point representations and its alternatives pose a significant engineering problem: hardware and software infrastructure is to tightly coupled to the IEEE-754 standard that changing any part of it incurs a high engineering overhead.
 One alternative is to simulate alternative floating-point representations in software, for example using soft-float or MPFR libraries~\cite{softfloat}, but the resulting performance is often several magnitudes lower than hardware implementations, limiting the size of the study conducted.
-Furthermore, simulating alternative numerical formats in software are incapable of using any compiler optimizations, nor can they leverage the vector instruction often crucial to reach application performance in modern processors.
+Furthermore, simulating alternative numerical formats in software are incapable of using any compiler optimizations, nor can they leverage the vector instructions often crucial to reach application performance in modern processors.
 Porting the full software infrastructure stack is possible (and inevitable), but is a non-trivial effort that requires changes to the compiler, standard libraries and (possibly) the Application-Binary-Interface (e.g.\ calling convention).
 
 A better way to explore floating-point representation is to leverage Field-Programmable Gate-Arrays (FPGAs).
@@ -115,7 +115,7 @@ In this paper, we contribute with:
 %We contribute with the following:
 \begin{itemize}
 \item Proposed design for a generalized FPGA training architecture targeting variable numerical formats, and
-\item Preliminary evaluation and analysis of core computation patterns for inference with respect to performance and resource utilization
+\item Preliminary evaluation and analysis of core computation patterns for inference and training with respect to performance and resource utilization
 \end{itemize}
 
 The remainder of our paper is structure in the following way: \cref{sec:relwork} positions our work against other work, similar efforts.
@@ -146,7 +146,7 @@ Vendors also embrace drastically different formats, notably in Intel’s NERVANA
 \section{A FPGA-based NN Framework}\label{sec:framework}
 \subsection{Field-Programmable Gate-Arrays}
 FPGAs can be used for a great variety of things, from accelerating computational algorithms to implementing a hardware design before taping out full chip.
-They are devices that can belong to the class of fine-grained reconfigurable devices.\\
+They are devices that belong to the class of fine-grained reconfigurable devices.\\
 FPGAs are made up of a reconfigurable fabric.
 The fabric they are made up of consists of vast arrays of switches and other routing hardware to connect all the functional elements, like multipliers, block RAMs and LUTs, in any way possible.
 The LUTs can be used to implement any mathematical function, like addition, multiplication, boolean functions and more.
@@ -180,7 +180,6 @@ In \cref{fig:ann-example}:b (and commonly in image processing network), the simp
 
 Inferring (predicting) using a deep neural network is done by connecting the input to what is to be predicted, and sequentially activating each layer -- from the front to the back of the network -- and propagating the output of each layer into the next.
 This effort is called \textit{forward propagation}. Training the network is done in a similar but reverse fashion -- errors are calculated at the output and propagated backwards.
-At this point in time, our framework focuses on forward propagation.
 
 \begin{figure*}[p]
   \centering
@@ -193,11 +192,13 @@ We aspire to create a neural network framework that allows design-space explorat
 Our framework, illustrated in \cref{fig:overview}, consists of a number of components.
 We have chosen to rely on Python as the high-level frontend for our framework.
 It is through Python that a user creates networks, selects inputs, and decides what data formats to use.
-Once a particular configuration is selected, our framework generates data-type oblivious training and inference code that targets Intel's OpenCL SDK for FPGAs.
+Once a particular configuration is selected, our framework can generate data-type oblivious training and inference code that targets Intel's OpenCL SDK for FPGAs.
 By data-type oblivious we mean that all operations associated with any particular data-type representation remain unresolved at the point of creation, as they will not depend on any of the native data-types or functionality of the OpenCL language.
-Instead, our Python framework invokes a data-type selector, which automatically generates a low-level hardware description language (HDL) library that contains commonly used operators for the selected data-type.
+Instead, our Python framework invokes a data-type selector, which automatically selects a low-level hardware description language (HDL) library that contains commonly used operators for the selected data-type.
 Once the Register-Transfer Level (RTL) library has been generated, it is merged with the data-type oblivious OpenCL template to yield the final description, which now can be synthesized using EDA tools and used.
 Invisible to the user, our host runtime system handles all communication, invocation and control over the FPGA from the host side.
+The host runtime can take weights from Keras and write weights for use with Keras.
+Currently it does not support Keras models for network design, since we only support Dense, Relu and Softmax layers.
 
 The present paper focuses on the IEEE-754 part of inference and training, where alternative data-types are on-going and future work.
 Although we do have a posit~\cite{podobasposit} generator ready to be used, it has yet to be integrated into our flow.
@@ -208,8 +209,8 @@ The forward kernels are the kernels the run to calculate the current activation 
 The backwards kernels are the kernels that calculate the error and back propagate the error while updating the weights and biases in the network used during training.
 The host code -- written in Python -- does one forward kernel call for every layer during inference.
 Finally it does a final softmax kernel call to get the final prediction.
-After which it runs the first delta kernel and continues on to run the backward kernel for all layers.
-For performance this could obviously be done on the host, given the limited size of most final layers, but performance is not the main goal of this effort.
+After which it runs the first delta kernel and continues on to run the backward kernel for all layers in reverse order.
+For performance the last couple of layers could obviously be done on the host, given the limited size of most of those layers, but performance is not the main goal of this effort.
 The main goal is to simplify changing the numerical format, and thus all the calculations need to be done in that format, and an FPGA is better at accommodating this without a huge performance impact. % TODO add citation for "HUGE"
 
 \begin{figure*}[p]
@@ -230,8 +231,8 @@ The main goal is to simplify changing the numerical format, and thus all the cal
 \end{figure*}
 
 \subsubsection{Design details}
-All weight matrices are transposed in memory, this to optimize the memory access pattern of the matrix-matrix multiplication.
-The main inference is performed using an blocking implementation of the matrix multiplication.
+All weight matrices are transposed in memory, this to optimize the memory access pattern of the main inference matrix-matrix multiplication.
+The inference is performed using an blocking implementation of the matrix multiplication.
 First a block is fetched from the matrices containing the activations and weights and is placed in the block RAM on the FPGA.
 The computation result is also stored on the block RAM, before a routine writes it back to global memory.
 The block RAM has a much lower latency than the global memory.
@@ -247,26 +248,27 @@ For the outermost loop that processes one block this behavior is not possible, s
 Multiple different blocks can theoretically be processed on the FPGA should space allow for it.
 But due to the space required for the training logic, on our current hardware (\cref{tab:test-hardware}) this does not fit or at least it will not pass the optimization stage on the OpenCl SDK compiler.
 
-The training logic itself, requires two matrix-matrix multiplications and three more simple multiply substract block.
-Due to the size requirements and the fact that the compiler will not successfully optimize the larger designs, the blocksize of the whole design is now limited to 24 and implementing a similar acceleration as above is impossible without using vendor IP.
+The training logic itself, requires two matrix-matrix multiplications and three more simple multiply and substract blocks.
+Due to the size requirements and the fact that the compiler will not successfully optimize the larger designs, the blocksize of the whole design is now limited to 24 and implementing a similar acceleration as done for inference is impossible without using vendor IP.
 
 \subsubsection{Design decisions}
-One of the main choices with the largest impact on implementation is whenever to keep all weight matrices in memory transposed.
+One of the main choices with the largest impact on implementation is whenever to keep all weight matrices in memory transposed (Colunm Major).
 During inference this is very beneficial, as it makes most reads sequential.
 In early stages of development it sped up the kernel performance by a factor of \num{3}.
 During training, using stochastic gradient descent, this can be a problem though, since the weight matrix should now be transposed back for the most efficient memory access patterns.
 But since the arithmetic density of the training process is higher, the effect might be slightly less pronounced.
-Although it also increases the used area slightly because now the matrix multiplication block is distinct from the other ones.
+Although it also increases the used area slightly because now the matrix multiplication block used for training is distinct from the other ones.
 The transposing or indexing logic is different for each.
 Another decision was move the execution of the outermost loop, the one that loops through all the layers, to the host.
 This loop cannot be pipelined due to a serial data-dependency, so it makes more sense to execute this loop on the host CPU.
 This saves space on the FPGA and simplifies the hardware design.
+%The final deci rant about other formats and no blocking for training.
 
 \section{Methodology}\label{sec:method}
 \subsection{Experimental Platform}
 The software versions and hardware configuration are shown in respectively \cref{tab:software-versions} and \cref{tab:test-hardware}.
 All kernels were compiled with the flags ``\texttt{-O3 -fp-relaxed}''.
-``-O3'' is an optimization flag, configuring the compiler to enable resource-driven optimizations. % TODO verify
+``\texttt{-O3}'' is an optimization flag, configuring the compiler to enable resource-driven optimizations. % TODO verify
 The ``\texttt{-fp-relaxed}'' flag gives the compiler some more freedom with the order of operations using a balanced tree hardware implementation, this gives about a \SIrange{10}{15}{\percent} performance benefit.% without changing the numerical output.
 \begin{table}[h]
   \centering
@@ -321,9 +323,11 @@ The host (NumPy based) code benchmarked at \num{60} GFLOPS for straight-forward 
 For the backward implementation the host code runs at \numrange{500}{800} GFLOPS, due to the higher arithmetic density.
 A first naive implementation on the FPGA clocked in at about \num{2.5} GFLOPS for this problem size.
 Transposing the weight matrix sped up the kernel to around \num{7.5} GFLOPS.\@
-The results for the different final FPGA block sizes are shown in \cref{tab:inference-kernel-performance} for the inference kernels.
+The results for the different final FPGA block sizes are shown in \cref{tab:inference-kernel-performance} for the inference kernels.\\
 \Cref{tab:kernel-performance} shows the performance of the training kernels (they include an inference kernel), here it is clear that the training kernels are limiting the overall throughput.
 The backwards kernels have a lot of potential to be optimized if required, but much is dependant on the other data types and their implementation (size), so this is better done when actually implementing this flow for that data type.
+Or at least at a point when support for a certain type is added to this framework.
+The used FPGA device for testing has hardware support for IEEE-754 floating point numbers, so an alternative format will greatly increase the required area for the complete design.
 
 \begin{table}[h]
   \centering
@@ -353,18 +357,18 @@ The backwards kernels have a lot of potential to be optimized if required, but m
 
 The performance is mostly memory-bound for these kernels. 
 Especially the backwards kernels seem to have a hard limit at around \numrange{6}{7} GFLOPS in their current form.
-Furthermore, given our experience with alternative numerical formats (most notably posits~\cite{podobasposit}), we do not expect performance to be degraded when changing numerical format.
+Furthermore, given our experience with alternative numerical formats (most notably posits~\cite{podobasposit}), we do not expect performance to be degraded when changing numerical format given enough resources (area).
 
 \subsection{FPGA Resource Utilization}
 The kernel resource utilization is shown in \cref{tab:fpga-inference-util} for the inference kernels only and \cref{tab:fpga-util} shows the utilization for the full implementation.
-The main limiting factor is the available block RAM and the ability for the compiler to runs its optimization phase without crashing.
+The main limiting factor is the available block RAM and the ability for the compiler to run its optimization phase without crashing.
 To stop the calculation of extra padding lines in the matrices, the block size should be a multiple of most of the layer sizes.
 Larger block sizes would exhaust the block RAM on the used FPGA device.
 The next logical size up from \num{64} would be \num{84} (\num{3}\(\times\)\num{28}) would use to much of the block RAM already for the inference alone.
 This is because there are three block buffers and the relationship between block size and used block RAM is square.
 With the training kernels the theoretical need for block RAMs would triple if all matrix operations were implemented in the same way.
-Right now on a single device, make the limit to the block size rather small, in light of that, it was decided to postpone the further optimizations after different formats were added.
-Those will also take a much larger area themselves, making the problem worse.
+Right now on a single device, this makes the limit to the block size rather small, in light of that, it was decided to postpone the further optimizations after different formats were added.
+Those will also take a much larger area themselves as stated before, making the problem worse.
 
 \begin{table}[h]
   \centering
@@ -395,7 +399,7 @@ Those will also take a much larger area themselves, making the problem worse.
 \subsection{Inference Performance}
 The MNIST network test set accuracy after training on the CPU is \SI{97.9}{\percent}.
 And the CIFAR-10 accuracy after training is \SI{47.9}{\percent}.
-The FPGA gets slightly different floating point results due to rounding differences and reaches \SI{95.4}{\percent} and \SI{45.2}{\percent} respectively after the same number of epochs.
+The FPGA gets slightly different floating point results due to rounding and implementation differences -- mainly in parallelism -- and reaches \SI{96.1}{\percent} and \SI{46.2}{\percent} respectively after the same number of epochs.
 
 \section{Conclusion}\label{sec:conclusion}
 We have introduced and described our efforts to create a general-purpose deep-learning framework for design space exploration of numerical formats.
@@ -403,7 +407,7 @@ While still in the early stages, we have focused on generality.
 We have shown interoperability with Keras, where we can train weights offline and import them into our framework with little effort.
 Also that we can correctly train on the CPU and FPGA with custom implementations of stochastic gradient descent.
 We evaluated the performance and resource consumption of our design on the FPGAs, and made sure that the inferred accuracy is correct.
-And that the training performance sufficient for further testing.
+And that the training performance is sufficient for further testing.
 We are currently working on the choice of numerical format to be used in both the inference and training part of our framework.
 
 \section{Acknowledgment}\label{sec:acknowledgment}
